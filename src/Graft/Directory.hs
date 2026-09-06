@@ -39,12 +39,17 @@ module Graft.Directory
     -- * Projections
     claimed,
     contested,
+
+    -- * Health
+    Health (..),
+    health,
   )
 where
 
 import Data.Map.Strict (Map)
 import Data.Map.Strict qualified as Map
 import Data.Set (Set)
+import Data.Set qualified as Set
 
 -- | Process identity: an opaque, flat name. A real mesh derives it
 -- from the process's TLS certificate so a peer can prove it.
@@ -146,3 +151,18 @@ contested (Directory m) = Map.keysSet (Map.filter isContested m)
   where
     isContested Contested = True
     isContested (Claimed _) = False
+
+-- | The verdict on a directory: sound, or disputed at the named
+-- PIDs. Well-formed runs keep every directory 'Sound'; a disputed
+-- PID yields no claim, so it is unreachable rather than arbitrarily
+-- routed.
+data Health = Sound | Disputed (Set Pid)
+  deriving (Show, Eq)
+
+-- | Classify a directory by its contested slots.
+health :: Directory addr -> Health
+health d
+  | Set.null cs = Sound
+  | otherwise = Disputed cs
+  where
+    cs = contested d

@@ -98,7 +98,11 @@ tests =
           testCase "duplicate delivery changes nothing" $
             merge view published @?= view,
           testCase "a second claimant contests exactly the worker" $
-            contested (merge view imposter) @?= Set.singleton worker
+            contested (merge view imposter) @?= Set.singleton worker,
+          testCase "the healthy view is Sound" $
+            health view @?= Sound,
+          testCase "the collision is Disputed at the worker" $
+            health (merge view imposter) @?= Disputed (Set.singleton worker)
         ]
     ]
   where

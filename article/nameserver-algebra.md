@@ -96,7 +96,13 @@ Directory
      ])
 ```
 
-The gateway's own slot is untouched; the worker's is contested, and stays that way.
+The gateway's own slot is untouched; the worker's is contested, and stays that way. The model passes this verdict:
+
+```haskell
+data Health = Sound | Disputed (Set Pid)
+```
+
+`health view` is `Sound`; `health (merge view imposter)` is `Disputed {Pid 5}`. A disputed PID yields no claim — unreachable, not arbitrarily routed — and `Sound` is the judgment the simulator must later prove every well-formed run keeps.
 
 These equalities run as tests in the repo.
 
