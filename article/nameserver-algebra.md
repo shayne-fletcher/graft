@@ -1,0 +1,108 @@
+# Nameserver
+
+`graft` is a Haskell model of a nameserver for a tree of processes. The setting: processes form a rooted tree of parent–child links; each process is named by a *PID* (opaque, flat, proved by certificate); each child *publishes* to its parent a directory of the processes in its subtree, and keeps that publication alive only as long as the link that carries it. An entry in a directory holds identity metadata and a *locator* — the adjacent next hop toward its process, rewritten at every level so each holder sees its own first edge. This note develops the algebra underneath.
+
+## The Directory
+
+A nameserver's visible state is a directory: a map from PIDs to entries, each identity metadata plus a locator. A parent builds its directory by merging its own entry with its children's committed publications.
+
+Merge must survive the network: publications arrive duplicated and in any order. So merging twice must equal merging once, and neither order nor grouping may change the result — idempotent, commutative, associative. Snapshots, deltas, and sequence numbers are encoding; this insensitivity is the contract.
+
+In the model:
+
+```haskell
+data Entry addr = Entry
+  { info :: Info,
+    locator :: addr
+  }
+
+data Slot addr
+  = Claimed (Entry addr)
+  | Contested
+
+newtype Directory addr
+  = Directory (Map Pid (Slot addr))
+
+merge :: Eq addr => Directory addr -> Directory addr -> Directory addr
+merge (Directory a) (Directory b) =
+  Directory (Map.unionWith joinSlot a b)
+
+joinSlot :: Eq addr => Slot addr -> Slot addr -> Slot addr
+joinSlot (Claimed e) (Claimed e') | e == e' = Claimed e
+joinSlot _ _ = Contested
+```
+
+Three collapses from the setting. Real identity metadata (a TLS name, labels) becomes one opaque `Info`: data carried through unchanged, never inspected. The prioritized address list becomes one locator: dialing order is mechanism. And `addr` is a type parameter: nothing here depends on what an address is.
+
+The model instantiates `addr` with:
+
+```haskell
+data NextHop = Self | Parent | Child Pid
+```
+
+A locator held at a node can only ever denote that node itself, its parent, or one of its children — so the type says so. `Parent` needs no PID because a node has exactly one. And because a `NextHop` is meaningful only from where its holder stands, an entry cannot be forwarded without being rewritten into the receiver's frame — a discipline the implementation maintains by care, forced here by the type.
+
+The laws are inherited pointwise. `Map.unionWith joinSlot` is associative, commutative, and idempotent exactly when `joinSlot` is, so each directory law reduces to a per-slot fact, and a PID present in only one directory passes through untouched — absence means no information, not denial. The property tests confirm the lift; the mathematics lives in the three lines of `joinSlot`.
+
+Those three lines answer one question: when the same PID appears on both sides, what is tolerable? Three cases. In normal operation, never — each PID lies in one directory or the other, and `joinSlot` does not run. Under duplication, the two entries are the same entry, the equality guard admits them, and merging twice was merging once: the tolerable case, and the reason the guard exists. Under a true double claim — two children each publishing one PID — the entries can never be equal, because committing a child's publication rewrote its locators to `Child c`, stamping each entry with the child it came through; the slot becomes `Contested`, and no winner is chosen.
+
+`Contested` is a branch that is never expected to run, and defining it anyway is the point. Totality keeps the laws unconditional — a partial merge would attach "provided no inputs collide" to every theorem downstream. Refusing to pick a winner is the specification of behavior at a trust boundary the parent cannot locally police. And making the violation a value turns "never happens" into an obligation: no reachable state of a well-formed run contains a contested slot — a theorem for the simulator, whose proof names the invariants (one ingress per PID, no certificate reuse) that carry the load.
+
+## A small example
+
+A gateway's view, built from its own entry and the committed publication of one child, a worker:
+
+```haskell
+gateway, worker :: Pid
+gateway = Pid 2
+worker = Pid 5
+
+own, published, view :: Directory NextHop
+own = singleton gateway (Entry (Info "gateway") Self)
+published = singleton worker (Entry (Info "worker") (Child worker))
+view = merge own published
+```
+
+Printed (wrapped for the page):
+
+```haskell
+>>> view
+Directory
+  (fromList
+     [ (Pid 2, Claimed (Entry {info = Info "gateway", locator = Self})),
+       (Pid 5, Claimed (Entry {info = Info "worker", locator = Child (Pid 5)}))
+     ])
+```
+
+Read it back: the gateway is here (`Self`), and the worker is reached through the worker (`Child (Pid 5)`). Delivering the publication a second time changes nothing: `merge view published == view`. And a second child claiming the worker's PID contests the slot even with identical metadata — its entry carries a different `Child` stamp:
+
+```haskell
+imposter = singleton worker (Entry (Info "worker") (Child (Pid 3)))
+```
+
+```haskell
+>>> merge view imposter
+Directory
+  (fromList
+     [ (Pid 2, Claimed (Entry {info = Info "gateway", locator = Self})),
+       (Pid 5, Contested)
+     ])
+```
+
+The gateway's own slot is untouched; the worker's is contested, and stays that way.
+
+These equalities run as tests in the repo.
+
+## The algebra
+
+We merge directories, and we must tolerate duplicated messages. A duplicate means the same PID arrives on both sides of a merge, so slots get compared against slots — and the slot rule makes everything explicit: equal claims pass through, anything else is `Contested`. That rule is a join, and it creates a little lattice:
+
+```text
+nothing  ≤  Claimed _  ≤  Contested
+```
+
+with distinct claims sitting side by side, neither below the other, and `Contested` on top because it absorbs every other term.
+
+Directory merge is this join applied per PID, plus union of the key sets. So `Directory addr` is a join-semilattice, ordered by `d ≤ d'` when `merge d d' == d'` — `d` adds nothing to `d'`. In the model this is `leq`, and the property suite checks the laws.
+
+A slot climbs this lattice and never descends; `Contested` keeps no memory of the claims, only of their disagreement. Forward-only is the right law for learning and the wrong one for failure: when a link dies its entries must go, and no merge can remove them — nor does `view` remember which link `published` came through. Links supply the provenance and the license to shrink. They are next.
