@@ -31,6 +31,15 @@ library
     hs-source-dirs:   src
     default-language: GHC2024
 
+executable graft-demo
+    import:           warnings
+    default-language: GHC2024
+    hs-source-dirs:   app
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.22.0.0
+      , graft
+
 test-suite graft-test
     import:           warnings
     default-language: GHC2024

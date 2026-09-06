@@ -59,7 +59,7 @@ newtype Pid = Pid Int
 -- | Inert identity metadata (a TLS server name, labels). Merge and
 -- relocation must preserve it; nothing inspects it.
 newtype Info = Info String
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | One directory entry: identity metadata plus a locator.
 data Entry addr = Entry
@@ -68,7 +68,7 @@ data Entry addr = Entry
     -- | Where to go next to reach this entry's process.
     locator :: addr
   }
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | A next hop, relative to the node holding the directory: the node
 -- itself, its parent, or one of its children by name. It stands where
@@ -84,7 +84,7 @@ data NextHop
     Parent
   | -- | The entry's process lives in the subtree of this child.
     Child Pid
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | A PID's slot in a directory.
 data Slot addr
@@ -92,11 +92,11 @@ data Slot addr
     Claimed (Entry addr)
   | -- | An ownership error: distinct entries claimed one PID.
     Contested
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | A directory: the visible map from PIDs to slots.
 newtype Directory addr = Directory (Map Pid (Slot addr))
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq)
 
 -- | Merge is the semigroup operation; see 'merge'.
 instance (Eq addr) => Semigroup (Directory addr) where
