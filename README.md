@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">graft</h1>
 <p align="center">
-  an algebra of one-shot attachment
+  one-shot attachment
 </p>
 <p align="center">
   <a href="https://github.com/shayne-fletcher/graft/actions/workflows/ci.yml">
@@ -14,4 +14,4 @@
   </a>
 </p>
 
-`graft` is an algebraic model of hierarchical replication of a process namespace.
+hierarchical replication of a process namespace.
