@@ -8,7 +8,7 @@ A parent's directory is the merge of its own entry with its children's committed
 
 Merge must survive the network: publications arrive duplicated and in any order. So merging twice must equal merging once, and neither order nor grouping may change the result — idempotent, commutative, associative. Snapshots, deltas, and sequence numbers are encoding; this insensitivity is the contract.
 
-In the model:
+The core of the model:
 
 ```haskell
 data Entry addr = Entry
@@ -42,11 +42,18 @@ data NextHop = Self | Parent | Child Pid
 
 A locator held at a node can only ever denote that node itself, its parent, or one of its children — so the type says so. `Parent` needs no PID because a node has exactly one. And because a `NextHop` is meaningful only from where its holder stands, an entry cannot be forwarded without being rewritten into the receiver's frame — a discipline the implementation maintains by care, forced here by the type.
 
-The laws are inherited pointwise. `Map.unionWith joinSlot` is associative, commutative, and idempotent exactly when `joinSlot` is, so each directory law reduces to a per-slot fact, and a PID present in only one directory passes through untouched — absence means no information, not denial. The property tests confirm the lift; the mathematics lives in the three lines of `joinSlot`.
+The laws are inherited pointwise. `Map.unionWith joinSlot` is associative, commutative, and idempotent exactly when `joinSlot` is, so each directory law reduces to a per-slot fact, and a PID present in only one directory passes through untouched — absence means no information, not denial. QuickCheck properties in the repo confirm the lift; the mathematics lives in the three lines of `joinSlot`.
 
-Those three lines answer one question: when the same PID appears on both sides, what is tolerable? Three cases. In normal operation, never — each PID lies in one directory or the other, and `joinSlot` does not run. Under duplication, the two entries are the same entry and the equality guard admits them — the reason the guard exists. Under a true double claim — two children each publishing one PID — the entries can never be equal: commit stamped each with the child it came through (`Child c`). The slot becomes `Contested`; no winner is chosen.
+In normal operation PIDs are disjoint and `joinSlot` never runs. When it does run, only two things can happen:
 
-`Contested` is a branch never expected to run; defining it anyway is the point. Totality keeps the laws unconditional — a partial merge would attach "provided no inputs collide" to every theorem. Refusing to pick a winner is the behavior at a trust boundary the parent cannot police. And making the violation a value turns "never happens" into an obligation: no reachable state of a well-formed run contains a contested slot — a theorem for the simulator, whose proof names the invariants (one ingress per PID, no certificate reuse) that carry the load.
+```text
+joinSlot s s   = s ;
+joinSlot (Claimed e) (Claimed e') = Contested ,   if e ≠ e' .
+```
+
+The first is a duplicate: merging twice is merging once. The second is a dispute, and the algebra declines to referee it — no winner, only the fact of disagreement. Two children's claims are never equal, for commit stamped each with the child it came through; a dispute always takes the second branch.
+
+A parent cannot forbid what its children send. So the bad state is named rather than banned: `Contested` should never arise, and the simulator will prove it never does.
 
 ## A small example
 
