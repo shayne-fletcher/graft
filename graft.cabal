@@ -1,0 +1,46 @@
+cabal-version:      3.0
+name:               graft
+version:            0.1.0.0
+synopsis:           an algebraic model of hierarchical namespace replication
+description:        an algebraic model of hierarchical namespace replication
+license:            BSD-3-Clause
+license-file:       LICENSE
+author:             Shane Fletcher
+maintainer:         shayne@shaynefletcher.org
+tested-with:        GHC == 9.14.1
+category:           System
+build-type:         Simple
+
+source-repository head
+    type:     git
+    location: https://github.com/shayne-fletcher/graft.git
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:
+      Graft.Directory
+      Graft.Link
+      Graft.Tree
+      Graft.Protocol
+      Graft.Simulate
+    build-depends:    base ^>=4.22.0.0
+                    , containers >=0.8 && <0.9
+    hs-source-dirs:   src
+    default-language: GHC2024
+
+test-suite graft-test
+    import:           warnings
+    default-language: GHC2024
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.22.0.0
+      , containers >=0.8 && <0.9
+      , graft
+      , tasty >=1.4
+      , tasty-hunit >=0.10
+      , tasty-quickcheck >=0.10
