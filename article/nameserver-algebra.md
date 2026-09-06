@@ -4,7 +4,7 @@
 
 ## The Directory
 
-A nameserver's visible state is a directory: a map from PIDs to entries, each identity metadata plus a locator. A parent builds its directory by merging its own entry with its children's committed publications.
+A parent's directory is the merge of its own entry with its children's committed publications.
 
 Merge must survive the network: publications arrive duplicated and in any order. So merging twice must equal merging once, and neither order nor grouping may change the result — idempotent, commutative, associative. Snapshots, deltas, and sequence numbers are encoding; this insensitivity is the contract.
 
@@ -44,9 +44,9 @@ A locator held at a node can only ever denote that node itself, its parent, or o
 
 The laws are inherited pointwise. `Map.unionWith joinSlot` is associative, commutative, and idempotent exactly when `joinSlot` is, so each directory law reduces to a per-slot fact, and a PID present in only one directory passes through untouched — absence means no information, not denial. The property tests confirm the lift; the mathematics lives in the three lines of `joinSlot`.
 
-Those three lines answer one question: when the same PID appears on both sides, what is tolerable? Three cases. In normal operation, never — each PID lies in one directory or the other, and `joinSlot` does not run. Under duplication, the two entries are the same entry, the equality guard admits them, and merging twice was merging once: the tolerable case, and the reason the guard exists. Under a true double claim — two children each publishing one PID — the entries can never be equal, because committing a child's publication rewrote its locators to `Child c`, stamping each entry with the child it came through; the slot becomes `Contested`, and no winner is chosen.
+Those three lines answer one question: when the same PID appears on both sides, what is tolerable? Three cases. In normal operation, never — each PID lies in one directory or the other, and `joinSlot` does not run. Under duplication, the two entries are the same entry and the equality guard admits them — the reason the guard exists. Under a true double claim — two children each publishing one PID — the entries can never be equal: commit stamped each with the child it came through (`Child c`). The slot becomes `Contested`; no winner is chosen.
 
-`Contested` is a branch that is never expected to run, and defining it anyway is the point. Totality keeps the laws unconditional — a partial merge would attach "provided no inputs collide" to every theorem downstream. Refusing to pick a winner is the specification of behavior at a trust boundary the parent cannot locally police. And making the violation a value turns "never happens" into an obligation: no reachable state of a well-formed run contains a contested slot — a theorem for the simulator, whose proof names the invariants (one ingress per PID, no certificate reuse) that carry the load.
+`Contested` is a branch never expected to run; defining it anyway is the point. Totality keeps the laws unconditional — a partial merge would attach "provided no inputs collide" to every theorem. Refusing to pick a winner is the behavior at a trust boundary the parent cannot police. And making the violation a value turns "never happens" into an obligation: no reachable state of a well-formed run contains a contested slot — a theorem for the simulator, whose proof names the invariants (one ingress per PID, no certificate reuse) that carry the load.
 
 ## A small example
 
