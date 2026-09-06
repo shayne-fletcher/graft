@@ -8,7 +8,16 @@ A parent's directory is the merge of its own entry with its children's committed
 
 Merge must survive the network: publications arrive duplicated and in any order. So merging twice must equal merging once, and neither order nor grouping may change the result — idempotent, commutative, associative. Snapshots, deltas, and sequence numbers are encoding; this insensitivity is the contract.
 
-The core of the model:
+The shape, as an algebra of types:
+
+```text
+Directory α = Pid ⇀ Entry α + 1 ;
+Entry α     = Info × α .
+```
+
+An entry pairs identity metadata with an address; a directory is a finite partial map from PIDs to entries, with one extra point — the `1`, marking a disputed claim. The partiality is semantic: "no entry" is a state in its own right — merged with any slot, it yields that slot unchanged.
+
+Realized:
 
 ```haskell
 data Entry addr = Entry
@@ -31,6 +40,8 @@ joinSlot :: Eq addr => Slot addr -> Slot addr -> Slot addr
 joinSlot (Claimed e) (Claimed e') | e == e' = Claimed e
 joinSlot _ _ = Contested
 ```
+
+That `Contested` absorbs under merge is a law shape alone cannot express; the property suite is where it lives.
 
 Three collapses from the setting. Real identity metadata (a TLS name, labels) becomes one opaque `Info`: data carried through unchanged, never inspected. The prioritized address list becomes one locator: dialing order is mechanism. And `addr` is a type parameter: nothing here depends on what an address is.
 
@@ -111,10 +122,10 @@ These equalities run as tests in the repo.
 We merge directories, and we must tolerate duplicated messages. A duplicate means the same PID arrives on both sides of a merge, so slots get compared against slots — and the slot rule makes everything explicit: equal claims pass through, anything else is `Contested`. That rule is a join, and it creates a little lattice:
 
 ```text
-nothing  ≤  Claimed _  ≤  Contested
+⊥  ≤  Claimed _  ≤  Contested
 ```
 
-with distinct claims sitting side by side, neither below the other, and `Contested` on top because it absorbs every other term.
+`⊥` is "no entry", at the bottom because it changes nothing it meets; distinct claims sit side by side, neither below the other; `Contested` is on top because it absorbs every other term.
 
 Directory merge is this join applied per PID, plus union of the key sets. So `Directory addr` is a join-semilattice, ordered by `d ≤ d'` when `merge d d' == d'` — `d` adds nothing to `d'`. In the model this is `leq`, and the property suite checks the laws.
 
