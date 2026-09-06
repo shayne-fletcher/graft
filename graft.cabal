@@ -1,8 +1,8 @@
 cabal-version:      3.0
 name:               graft
 version:            0.1.0.0
-synopsis:           an algebraic model of hierarchical namespace replication
-description:        an algebraic model of hierarchical namespace replication
+synopsis:           an algebraic model of hierarchical replication of a process namespace
+description:        an algebraic model of hierarchical replication of a process namespace
 license:            BSD-3-Clause
 license-file:       LICENSE
 author:             Shane Fletcher

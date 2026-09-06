@@ -14,4 +14,4 @@
   </a>
 </p>
 
-`graft` is an algebraic model of hierarchical namespace replication.
+`graft` is an algebraic model of hierarchical replication of a process namespace.
