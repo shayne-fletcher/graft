@@ -1,6 +1,6 @@
 # Nameserver
 
-`graft` is a Haskell model of a nameserver for a tree of processes. The setting: processes form a rooted tree of parent–child links; each process is named by a *PID* (opaque, flat, proved by certificate); each child *publishes* to its parent a directory of the processes in its subtree, and keeps that publication alive only as long as the link that carries it. An entry in a directory holds identity metadata and a *locator* — the adjacent next hop toward its process, rewritten at every level so each holder sees its own first edge. This note develops the algebra underneath.
+This note develops an algebra of namespace replication over a tree of processes. The Haskell alongside realizes it — properties checking the laws, a demo witnessing the examples. The setting: processes form a rooted tree of parent–child links; each process is named by a *PID* (opaque, flat, proved by certificate); each child *publishes* to its parent a directory of the processes in its subtree, and keeps that publication alive only as long as the link that carries it. An entry in a directory holds identity metadata and a *locator* — the adjacent next hop toward its process, rewritten at every level so each holder sees its own first edge.
 
 ## The Directory
 
@@ -45,7 +45,7 @@ That `Contested` absorbs under merge is a law shape alone cannot express; the pr
 
 Three collapses from the setting. Real identity metadata (a TLS name, labels) becomes one opaque `Info`: data carried through unchanged, never inspected. The prioritized address list becomes one locator: dialing order is mechanism. And `addr` is a type parameter: nothing here depends on what an address is.
 
-The model instantiates `addr` with:
+For `α`, take:
 
 ```haskell
 data NextHop = Self | Parent | Child Pid
