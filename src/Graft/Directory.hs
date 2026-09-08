@@ -31,6 +31,7 @@ module Graft.Directory
     empty,
     singleton,
     fromList,
+    mapLocators,
 
     -- * Merge and order
     merge,
@@ -118,6 +119,16 @@ singleton p e = Directory (Map.singleton p (Claimed e))
 -- 'Contested'.
 fromList :: (Eq addr) => [(Pid, Entry addr)] -> Directory addr
 fromList = foldMap (uncurry singleton)
+
+-- | Rewrite every claimed locator into another address frame.
+-- 'Contested' slots remain contested because they no longer retain
+-- either claim.
+mapLocators :: (a -> b) -> Directory a -> Directory b
+mapLocators f (Directory entries) = Directory (fmap mapSlot entries)
+  where
+    mapSlot (Claimed (Entry entryInfo entryLocator)) =
+      Claimed (Entry entryInfo (f entryLocator))
+    mapSlot Contested = Contested
 
 -- | Join two slots. Equal claims are one claim; distinct claims are
 -- an ownership error; 'Contested' absorbs.
