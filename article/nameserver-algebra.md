@@ -8,14 +8,7 @@ A parent's directory is the merge of its own entry with its children's committed
 
 Merge must survive the network: publications arrive duplicated and in any order. So merging twice must equal merging once, and neither order nor grouping may change the result — idempotent, commutative, associative. Snapshots, deltas, and sequence numbers are encoding; this insensitivity is the contract.
 
-The shape, as an algebra of types:
-
-```text
-Directory α = Pid ⇀ Entry α + 1 ;
-Entry α     = Info × α .
-```
-
-An entry pairs identity metadata with an address; a directory is a finite partial map from PIDs to entries, with one extra point — the `1`, marking a disputed claim. The partiality is semantic: "no entry" is a state in its own right — merged with any slot, it yields that slot unchanged.
+An entry pairs identity metadata with an address; a directory is a finite partial map from PIDs to slots. A slot is either a claimed entry or `Contested`, marking a disputed claim. The partiality is semantic: "no entry" is a state in its own right — merged with any slot, it yields that slot unchanged.
 
 Realized:
 
