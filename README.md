@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">graft</h1>
 <p align="center">
-  one-shot attachment
+  link-scoped publication
 </p>
 <p align="center">
   <a href="https://github.com/shayne-fletcher/graft/actions/workflows/ci.yml">

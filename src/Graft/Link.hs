@@ -1,12 +1,10 @@
 -- |
 -- Module      : Graft.Link
--- Description : One-shot links and their current publications.
+-- Description : Link lifetimes and their current publications.
 --
 -- Directory merge deliberately forgets where equal or competing
 -- claims came from. A 'LinkTable' retains that provenance by keeping
--- one current publication for every live child link. Its visible
--- directory is a projection, rebuilt by merging those publications
--- after rewriting every locator into the holder's address frame.
+-- one current directory publication for every live child link.
 --
 -- Publication replaces one link's previous contribution. Finalizing
 -- the link removes that contribution from the projection and records
@@ -43,7 +41,7 @@ import Graft.Directory
 newtype LinkId = LinkId Int
   deriving (Show, Eq, Ord)
 
--- | The state retained for one live link ID. Admission and the first
+-- | The state retained for one link ID. Admission and the first
 -- committed publication are distinct states.
 data Attachment addr
   = Admitted Pid
@@ -56,7 +54,7 @@ data Attachment addr
 newtype LinkTable addr = LinkTable (Map LinkId (Attachment addr))
   deriving (Show, Eq)
 
--- | A transition rejected by the one-shot link state machine.
+-- | A transition rejected by the link-lifetime state machine.
 data LinkError
   = LinkIdCollision LinkId
   | ChildAlreadyAttached Pid
@@ -70,7 +68,11 @@ emptyLinks = LinkTable Map.empty
 
 -- | Admit one child under a fresh link ID. An exact replay before
 -- finalization is harmless; a finalized ID cannot be admitted again.
-attach :: LinkId -> Pid -> LinkTable addr -> Either LinkError (LinkTable addr)
+attach ::
+  LinkId ->
+  Pid ->
+  LinkTable addr ->
+  Either LinkError (LinkTable addr)
 attach link childPid table@(LinkTable links) =
   case Map.lookup link links of
     Just (Finalized _) -> Left (FinalizedLink link)
@@ -108,7 +110,10 @@ publish link nextPublication (LinkTable links) =
 
 -- | Finalize a link and withdraw its complete publication. Replaying
 -- finalization is harmless; the terminal ID cannot publish again.
-finalize :: LinkId -> LinkTable addr -> Either LinkError (LinkTable addr)
+finalize ::
+  LinkId ->
+  LinkTable addr ->
+  Either LinkError (LinkTable addr)
 finalize link table@(LinkTable links) =
   case Map.lookup link links of
     Nothing -> Left (UnknownLink link)
@@ -121,9 +126,9 @@ finalize link table@(LinkTable links) =
         )
 
 -- | Derive the holder's directory from its local contribution and
--- every published child contribution. Admitted links without a
--- committed baseline contribute nothing. All entries learned through
--- a child acquire that child as their next hop.
+-- every published child contribution. Admitted and finalized links
+-- contribute nothing. All entries learned through a child acquire
+-- that child as their next hop.
 materialize :: Directory NextHop -> LinkTable addr -> Directory NextHop
 materialize local (LinkTable links) =
   foldl' merge local

@@ -12,7 +12,7 @@ A node combines several committed contributions, and that fold must not depend o
 
 An entry pairs identity metadata with an address; a directory is a finite partial map from PIDs to slots. A slot is either a claimed entry or `Contested`, marking a disputed claim. The partiality is semantic: "no entry" is a state in its own right — merged with any slot, it yields that slot unchanged.
 
-The snippets use the package's `GHC2024` language edition. Realized:
+In Haskell:
 
 ```haskell
 import Data.List (foldl')
@@ -61,7 +61,7 @@ That `Contested` absorbs under merge is a law shape alone cannot express; the pr
 
 Three collapses from the setting. Real identity metadata (a TLS name, labels) becomes one opaque `Info`: data carried through unchanged, never inspected. The prioritized address list becomes one locator: dialing order is mechanism. And `addr` is a type parameter: nothing here depends on what an address is.
 
-For `α`, take:
+For the executable model, instantiate `addr` as `NextHop`:
 
 ```haskell
 data NextHop = Self | Parent | Child Pid
@@ -234,4 +234,183 @@ link 1 live + link 2 finalized      -> Claimed worker via child 5
 
 The view changed from `Contested` to `Claimed`, but `merge` itself never removed information. Instead, the parent stopped including the finalized link's publication and recomputed the merge from the links still live. Before finalizing a link, the parent must stop accepting publication updates from its child and stop routing new traffic through that link. It then waits for traffic already using the link to finish. Only after those steps may the parent remove the link's publication from the visible directory. No late update can restore the contribution, and no packet can use a route after its directory entry has disappeared.
 
-The flat model now explains withdrawal across one parent–child link. A child's publication lists all PIDs reachable through it but does not record the descendant links that supplied them. If one of those deeper links fails, the child's next publication simply omits its PIDs. An ancestor sees the removal, but not which failure domain ended or a finalizer that rules out later updates from it. A tree-shaped publication preserves each nested link as a named domain. Its finalizer can travel upward, remove exactly that subtree, and ensure that updates for the old domain are not accepted. A reconnection uses a new domain. Trees are next.
+`LinkTable` preserves one level of provenance: it records which immediate child link supplied each flat publication. The publication itself still collapses every deeper link into one directory. To preserve provenance at every level, apply the same structure recursively: a live contribution contains that child process's own entry and a table of its child contributions. That recursive link table is a tree.
+
+## Trees
+
+The flat model stores one whole-subtree `Directory` for each live child. The tree model replaces that directory with a `Summary (Directory ())`:
+
+```text
+flat contribution:
+  Directory { entries from this node and every descendant }
+
+tree contribution:
+  Live {
+    local = Directory { this process's PID ↦ its own entry },
+    children = Forest { one Summary for each child domain }
+  }
+  or Finalized
+```
+
+The directory has not disappeared. It has become the local part of a larger value. In a complete nameserver summary, that directory is a singleton containing the entry for the process represented by this domain. Entries for descendant processes move into `Forest`, where each child domain has its own `Summary`. Every live child summary makes the same split between its process's entry and its children; that repetition is the recursion. A finalizer can therefore remove one named subtree without flattening or enumerating it.
+
+The `DomainId` stays with its map entry when the tree is forwarded to an ancestor. It names the same attachment lifetime everywhere that subtree appears and is never reused.
+
+For example, let `A → B → C` mean that A is B's parent and B is C's parent. When C attaches to B, that attachment lifetime receives a domain ID. The examples abbreviate it as `BC`. This is only a readable name for an otherwise opaque ID; it is not a pair of PIDs or a route. B publishes its own subtree to A, with C's subtree nested under the key `BC`. If C disconnects, the later entry `BC ↦ Finalized`—read “domain `BC` maps to `Finalized`”—identifies the same subtree as ended. A reconnection receives a different domain ID, written `BC'`.
+
+The recursive representation is:
+
+```haskell
+newtype DomainId = DomainId Int
+  deriving (Show, Eq, Ord)
+
+data Summary payload
+  = Live payload (Forest payload)
+  | Finalized
+  deriving (Show, Eq)
+
+newtype Forest payload
+  = Forest (Map DomainId (Summary payload))
+  deriving (Show, Eq)
+```
+
+A published tree has one root domain and may contain one domain for every descendant link lifetime. Each `Live` summary contains a `Forest`: the map of that domain's immediate child domains. Those entries are siblings of one another, but the important relationship is that they are children of the domain containing the forest. Each map entry pairs a child's `DomainId` with the `Summary` for that child domain.
+
+`Summary payload` therefore describes one domain within the larger tree. `Live` contains that domain's local state and the summaries of its child domains. `Finalized` records only that the domain's publication lifetime has ended; its former payload and complete child forest are no longer needed. When a node receives another report for a domain it already knows, live payloads merge, child entries with the same domain ID combine recursively, and `Finalized` replaces the live state. The enclosing map supplies the domain ID, so `Summary` does not repeat it.
+
+For the nameserver, substitute `Directory ()` for `payload`. In a complete live summary, this directory has one key: the PID of the process represented by that domain. Its value is that process's own entry. A later partial update may use the empty directory when that entry has not changed; merging the update into the stored summary retains the existing singleton. The type remains generic because the same recursive structure can carry mergeable state other than a nameserver directory.
+
+A nameserver tree is well formed only when each PID originates in exactly one live domain. An implementation must reject or explicitly represent duplicate ownership; route materialization must never choose between competing domains. The algebra below assumes this invariant without prescribing how it is enforced.
+
+A tree publication deliberately carries no usable locators. The directory carries process identity metadata, while the tree position carries provenance; neither tells the receiver which adjacent process is its next hop. The unit locator in `Directory ()` marks that absence. Materialization turns the tree into the receiver's `Directory NextHop`. For each immediate child—say B—the receiver flattens B's live subtree and assigns every resulting entry the locator `Child B`. At this nameserver instantiation, the projection has this type:
+
+```haskell
+materializeThrough ::
+  Pid ->
+  Summary (Directory ()) ->
+  Directory NextHop
+```
+
+`NextHop` is the executable model's locator type. A system that routes directly by datagram endpoint would instead supply the immediate child's `DatagramAddr` and materialize `Summary (Directory ())` as `Directory DatagramAddr`.
+
+The implementation below generalizes the input locator type because it replaces every incoming locator regardless of its value.
+
+`Admitted` remains local protocol state before the first publication and does not appear in the published tree.
+
+A published tree has one root domain. Every other domain appears once, in exactly one parent's child map. A finalizer can therefore identify one unambiguous subtree by its `DomainId`.
+
+The flat model treats each accepted publication as the link's new complete directory. The recursive algebra instead permits a receiver to store a complete summary and merge later reports into it. A later report may be sparse: it can use the empty local payload and mention only child domains for which it carries new information. Merging that report preserves every omitted branch, while a child entry set to `Finalized` becomes terminal. The model defines how such reports combine, but not how a sender computes, sequences, or transports them. When a direct attachment ends, its parent marks the corresponding domain `Finalized` and publishes that fact upward. Finalization is now replicated state rather than only a local link-table transition.
+
+### Recursive merge
+
+Two reports for the same `DomainId` merge into one summary. Live summaries merge their local payloads and then merge their child forests by domain ID. A finalizer dominates every live summary for its domain:
+
+```haskell
+mergeSummary ::
+  Semigroup payload =>
+  Summary payload ->
+  Summary payload ->
+  Summary payload
+mergeSummary Finalized _ = Finalized
+mergeSummary _ Finalized = Finalized
+mergeSummary (Live local children) (Live local' children') =
+  Live (local <> local') (children <> children')
+
+mergeForest ::
+  Semigroup payload =>
+  Forest payload ->
+  Forest payload ->
+  Forest payload
+mergeForest (Forest domains) (Forest domains') =
+  Forest (Map.unionWith mergeSummary domains domains')
+```
+
+The two uses of `(<>)` select different merge operations from their operand types. For the nameserver payload, `local <> local'` means `merge local local'`. For the child forests, `children <> children'` means `mergeForest children children'`.
+
+Absence from a forest is the bottom value for a domain. A summary from an unknown domain is inserted; summaries with distinct IDs remain separate; summaries with the same ID merge recursively. These merge operations are joins in the information order. If payload merge is associative, commutative, and idempotent, summary and forest merge inherit those laws.
+
+`Finalized` is the greatest value for one domain:
+
+```text
+Live payload children  ≤  Finalized
+```
+
+Merging a delayed live update after the finalizer therefore still yields `Finalized`. The update cannot restore the domain's payload or descendants. A reconnect does not move backward from `Finalized` to `Live`; it publishes under a fresh domain ID.
+
+### The borrowed view
+
+Nameserver entries are borrowed from the domains that publish them: they remain visible only while every domain on their path is live. Materialization walks the tree, merges the payloads of live domains, and contributes nothing for a finalized domain:
+
+```haskell
+flattenSummary :: Monoid payload => Summary payload -> payload
+flattenSummary Finalized = mempty
+flattenSummary (Live local children) =
+  local <> flattenForest children
+
+flattenForest :: Monoid payload => Forest payload -> payload
+flattenForest (Forest domains) =
+  foldMap flattenSummary (Map.elems domains)
+
+materializeThrough ::
+  Eq addr =>
+  Pid ->
+  Summary (Directory addr) ->
+  Directory NextHop
+materializeThrough childPid =
+  mapLocators (const (Child childPid)) . flattenSummary
+
+materializeForestThrough ::
+  Eq addr =>
+  Pid ->
+  Forest (Directory addr) ->
+  Directory NextHop
+materializeForestThrough childPid =
+  mapLocators (const (Child childPid)) . flattenForest
+```
+
+`materializeForestThrough` projects a forest received through one immediate child. It flattens the live domains in that forest and rewrites every resulting locator through that child.
+
+Merging a finalizer adds information to the summary, but its materialized directory is smaller. The receiver recomputes that directory from the updated summary; because a finalized branch contributes `empty`, the branch's entries are absent from the new result. No removal occurs inside `Directory.merge`.
+
+### Three processes
+
+Return to `A → B → C`. Write `AB` for the domain ID of B's attachment to A and `BC` for the domain ID of C's attachment to B. In the displays below, `AB ↦ value` means that a forest maps the domain ID `AB` to `value`; `{ B }` abbreviates a directory containing B's entry; `{}` is an empty child forest; and `⊥` is the empty payload. B publishes this summary to A:
+
+```text
+AB ↦ Live {
+  local = { B },
+  children = {
+    BC ↦ Live {
+      local = { C },
+      children = {}
+    }
+  }
+}
+```
+
+At B, C's entry materializes with `Child C` because C is B's immediate child. B does not copy that locator into the tree it sends upward; the payload carries C's identity information with a unit locator. When A receives the tree, it flattens the live `AB` subtree and assigns `Child B` to both B and C. A therefore routes both processes through its own immediate child. The nested `BC` domain preserves C's ownership and failure boundary, not a route from A directly to C.
+
+If C's attachment fails, B merges this sparse update into its summary:
+
+```text
+AB ↦ Live {
+  local = ⊥,
+  children = {
+    BC ↦ Finalized
+  }
+}
+```
+
+`⊥` says the update adds nothing to B's local payload. `Finalized` dominates the earlier live `BC` summary, so C and everything beneath it disappear from the materialized directory while B remains. B need not enumerate C's PIDs in order to withdraw them.
+
+If B's attachment fails, A instead merges:
+
+```text
+AB ↦ Finalized
+```
+
+That one finalizer masks B's complete subtree, including C. If B later reconnects, it receives a fresh domain ID such as `AB'`. A delayed update for `AB` still merges with `Finalized` and contributes nothing; publications under `AB'` belong to the new lifetime.
+
+The Haskell properties check that summary merge is associative, commutative, and idempotent; that `Finalized` dominates every live summary; that child and parent finalization remove the intended borrowed state; and that a late update cannot revive a finalized domain after reconnection.
+
+The algebra retains a finalizer for as long as old summaries might still arrive. Deciding when it may be disseminated and forgotten is a protocol question, not another merge rule. That question is where induced ordering enters.

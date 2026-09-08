@@ -4,6 +4,7 @@ import Data.Map.Strict qualified as Map
 import Data.Set qualified as Set
 import Graft.Directory
 import Graft.Link
+import Graft.Tree qualified as Tree
 import Test.Tasty
 import Test.Tasty.HUnit
 import Test.Tasty.QuickCheck
@@ -29,6 +30,34 @@ genEntry = Entry <$> genInfo <*> genNextHop
 genDirectory :: Gen (Directory NextHop)
 genDirectory = genDirectoryOver [0 .. 7]
 
+genTreePayload :: Gen (Directory ())
+genTreePayload =
+  fromList
+    <$> listOf
+      ((,) <$> genPid <*> (Entry <$> genInfo <*> pure ()))
+
+genDomainId :: Gen Tree.DomainId
+genDomainId = Tree.DomainId <$> choose (0, 4)
+
+genSummary :: Gen (Tree.Summary (Directory ()))
+genSummary = sized (genSummarySized . min 5)
+
+genSummarySized :: Int -> Gen (Tree.Summary (Directory ()))
+genSummarySized size =
+  frequency
+    [ (1, pure Tree.Finalized),
+      (4, Tree.Live <$> genTreePayload <*> genForestSized (size - 1))
+    ]
+  where
+    genForestSized remaining
+      | remaining <= 0 = pure Tree.emptyForest
+      | otherwise = do
+          count <- chooseInt (0, min 3 remaining)
+          Tree.fromDomains
+            <$> vectorOf
+              count
+              ((,) <$> genDomainId <*> genSummarySized (remaining `div` 2))
+
 -- | A directory whose PIDs are drawn from the given pool. Locators
 -- range over the full pool either way; only the keys are confined.
 genDirectoryOver :: [Int] -> Gen (Directory NextHop)
@@ -44,7 +73,7 @@ forAllDirs2 f = forAll genDirectory (forAll genDirectory . f)
 tests :: TestTree
 tests =
   testGroup
-    "Graft.Directory"
+    "graft"
     [ testGroup
         "merge laws"
         [ testProperty "associative" $
@@ -158,6 +187,48 @@ tests =
             expectRight (attach firstLink firstChild links0) >>= (@?= links0)
             links1 <- expectRight (finalize firstLink links0)
             expectRight (finalize firstLink links1) >>= (@?= links1)
+        ],
+      testGroup
+        "trees"
+        [ testGroup
+            "merge laws"
+            [ testProperty "associative" $
+                forAll genSummary $ \a ->
+                  forAll genSummary $ \b ->
+                    forAll genSummary $ \c ->
+                      Tree.mergeSummary a (Tree.mergeSummary b c)
+                        == Tree.mergeSummary (Tree.mergeSummary a b) c,
+              testProperty "commutative" $
+                forAll genSummary $ \a ->
+                  forAll genSummary $ \b ->
+                    Tree.mergeSummary a b == Tree.mergeSummary b a,
+              testProperty "idempotent" $
+                forAll genSummary $ \summary ->
+                  Tree.mergeSummary summary summary == summary,
+              testProperty "finalized dominates every summary" $
+                forAll genSummary $ \summary ->
+                  Tree.mergeSummary summary Tree.Finalized == Tree.Finalized
+                    && Tree.mergeSummary Tree.Finalized summary == Tree.Finalized
+            ],
+          testGroup
+            "three-node example"
+            [ testCase "the live tree contains the child and grandchild" $
+                Map.keysSet (claimed (Tree.materializeThrough firstChild middleSummary))
+                  @?= Set.fromList [firstChild, leaf],
+              testCase "finalizing a child removes exactly its subtree" $
+                claimed (Tree.materializeThrough firstChild middleAfterLeaf)
+                  @?= Map.singleton
+                    firstChild
+                    (Entry workerInfo (Child firstChild)),
+              testCase "finalizing a parent removes all descendants" $
+                Tree.materializeThrough
+                  firstChild
+                  (Tree.mergeSummary middleSummary Tree.Finalized)
+                  @?= empty,
+              testCase "a late old update cannot revive a finalized domain after reconnect" $
+                Tree.flattenForest forestAfterLateOldUpdate
+                  @?= workerPublication
+            ]
         ]
     ]
   where
@@ -178,6 +249,36 @@ tests =
       merge
         workerPublication
         (singleton leaf (Entry (Info "leaf") ()))
+    oldParentDomain = Tree.DomainId 10
+    childDomain = Tree.DomainId 11
+    newParentDomain = Tree.DomainId 12
+    leafPublication = singleton leaf (Entry (Info "leaf") ())
+    middleSummary =
+      Tree.Live
+        workerPublication
+        ( Tree.singletonDomain
+            childDomain
+            (Tree.Live leafPublication Tree.emptyForest)
+        )
+    middleAfterLeaf =
+      Tree.mergeSummary
+        middleSummary
+        childFinalizationUpdate
+    childFinalizationUpdate =
+      Tree.Live
+        empty
+        (Tree.singletonDomain childDomain Tree.Finalized)
+    reconnectedForest =
+      Tree.mergeForest
+        (Tree.singletonDomain oldParentDomain Tree.Finalized)
+        ( Tree.singletonDomain
+            newParentDomain
+            (Tree.Live workerPublication Tree.emptyForest)
+        )
+    forestAfterLateOldUpdate =
+      Tree.mergeForest
+        reconnectedForest
+        (Tree.singletonDomain oldParentDomain middleSummary)
 
     publishedOn link childPid publication = do
       links <- expectRight (attach link childPid emptyLinks)
