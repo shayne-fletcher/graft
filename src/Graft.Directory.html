@@ -31,30 +31,31 @@
 </span><span id="line-31"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#empty"><span class="hs-identifier">empty</span></a></span><span class="hs-special">,</span><span>
 </span><span id="line-32"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#singleton"><span class="hs-identifier">singleton</span></a></span><span class="hs-special">,</span><span>
 </span><span id="line-33"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#fromList"><span class="hs-identifier">fromList</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-34"></span><span>
-</span><span id="line-35"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Merge and order</span></span><span>
-</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#merge"><span class="hs-identifier">merge</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#leq"><span class="hs-identifier">leq</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-38"></span><span>
-</span><span id="line-39"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Projections</span></span><span>
-</span><span id="line-40"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#claimed"><span class="hs-identifier">claimed</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#contested"><span class="hs-identifier">contested</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-42"></span><span>
-</span><span id="line-43"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Health</span></span><span>
-</span><span id="line-44"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier">Health</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
-</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#health"><span class="hs-identifier">health</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-46"></span><span>  </span><span class="hs-special">)</span><span>
-</span><span id="line-47"></span><span class="hs-keyword">where</span><span>
-</span><span id="line-48"></span><span>
-</span><span id="line-49"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
-</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
-</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Set</span></span><span class="hs-special">)</span><span>
-</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
-</span><span id="line-53"></span><span>
-</span><span id="line-54"></span><span class="hs-comment">-- | Process identity: an opaque, flat name. A real mesh derives it</span><span>
-</span><span id="line-55"></span><span class="hs-comment">-- from the process's TLS certificate so a peer can prove it.</span><span>
-</span><span id="line-56"></span><span class="hs-keyword">newtype</span><span> </span><span id="Pid"><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-var">Pid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Pid"><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-var">Pid</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
-</span><span id="line-57"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047226"><span id="local-6989586621679047232"><span id="local-6989586621679047236"><span class="annot"><span class="annottext">Int -&gt; Pid -&gt; ShowS
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier">mapLocators</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Merge and order</span></span><span>
+</span><span id="line-37"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#merge"><span class="hs-identifier">merge</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-38"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#leq"><span class="hs-identifier">leq</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-39"></span><span>
+</span><span id="line-40"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Projections</span></span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#claimed"><span class="hs-identifier">claimed</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#contested"><span class="hs-identifier">contested</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Health</span></span><span>
+</span><span id="line-45"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier">Health</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-46"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#health"><span class="hs-identifier">health</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-48"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-52"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Set</span></span><span class="hs-special">)</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Set</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Set</span></span><span>
+</span><span id="line-54"></span><span>
+</span><span id="line-55"></span><span class="hs-comment">-- | Process identity: an opaque, flat name. A real mesh derives it</span><span>
+</span><span id="line-56"></span><span class="hs-comment">-- from the process's TLS certificate so a peer can prove it.</span><span>
+</span><span id="line-57"></span><span class="hs-keyword">newtype</span><span> </span><span id="Pid"><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-var">Pid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Pid"><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-var">Pid</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-58"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050649"><span id="local-6989586621679050655"><span id="local-6989586621679050659"><span class="annot"><span class="annottext">Int -&gt; Pid -&gt; ShowS
 [Pid] -&gt; ShowS
 Pid -&gt; String
 (Int -&gt; Pid -&gt; ShowS)
@@ -67,14 +68,14 @@ $cshow :: Pid -&gt; String
 show :: Pid -&gt; String
 $cshowList :: [Pid] -&gt; ShowS
 showList :: [Pid] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047241"><span id="local-6989586621679047246"><span class="annot"><span class="annottext">Pid -&gt; Pid -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050664"><span id="local-6989586621679050669"><span class="annot"><span class="annottext">Pid -&gt; Pid -&gt; Bool
 (Pid -&gt; Pid -&gt; Bool) -&gt; (Pid -&gt; Pid -&gt; Bool) -&gt; Eq Pid
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Pid -&gt; Pid -&gt; Bool
 == :: Pid -&gt; Pid -&gt; Bool
 $c/= :: Pid -&gt; Pid -&gt; Bool
 /= :: Pid -&gt; Pid -&gt; Bool
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047255"><span id="local-6989586621679047259"><span id="local-6989586621679047263"><span id="local-6989586621679047267"><span id="local-6989586621679047271"><span id="local-6989586621679047275"><span id="local-6989586621679047279"><span class="annot"><span class="annottext">Eq Pid
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050678"><span id="local-6989586621679050682"><span id="local-6989586621679050686"><span id="local-6989586621679050690"><span id="local-6989586621679050694"><span id="local-6989586621679050698"><span id="local-6989586621679050702"><span class="annot"><span class="annottext">Eq Pid
 Eq Pid =&gt;
 (Pid -&gt; Pid -&gt; Ordering)
 -&gt; (Pid -&gt; Pid -&gt; Bool)
@@ -112,11 +113,11 @@ max :: Pid -&gt; Pid -&gt; Pid
 $cmin :: Pid -&gt; Pid -&gt; Pid
 min :: Pid -&gt; Pid -&gt; Pid
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-58"></span><span>
-</span><span id="line-59"></span><span class="hs-comment">-- | Inert identity metadata (a TLS server name, labels). Merge and</span><span>
-</span><span id="line-60"></span><span class="hs-comment">-- relocation must preserve it; nothing inspects it.</span><span>
-</span><span id="line-61"></span><span class="hs-keyword">newtype</span><span> </span><span id="Info"><span class="annot"><a href="Graft.Directory.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Info"><span class="annot"><a href="Graft.Directory.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
-</span><span id="line-62"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047292"><span id="local-6989586621679047298"><span id="local-6989586621679047302"><span class="annot"><span class="annottext">Int -&gt; Info -&gt; ShowS
+</span><span id="line-59"></span><span>
+</span><span id="line-60"></span><span class="hs-comment">-- | Inert identity metadata (a TLS server name, labels). Merge and</span><span>
+</span><span id="line-61"></span><span class="hs-comment">-- relocation must preserve it; nothing inspects it.</span><span>
+</span><span id="line-62"></span><span class="hs-keyword">newtype</span><span> </span><span id="Info"><span class="annot"><a href="Graft.Directory.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Info"><span class="annot"><a href="Graft.Directory.html#Info"><span class="hs-identifier hs-var">Info</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">String</span></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050715"><span id="local-6989586621679050721"><span id="local-6989586621679050725"><span class="annot"><span class="annottext">Int -&gt; Info -&gt; ShowS
 [Info] -&gt; ShowS
 Info -&gt; String
 (Int -&gt; Info -&gt; ShowS)
@@ -129,7 +130,7 @@ $cshow :: Info -&gt; String
 show :: Info -&gt; String
 $cshowList :: [Info] -&gt; ShowS
 showList :: [Info] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047306"><span id="local-6989586621679047312"><span class="annot"><span class="annottext">Info -&gt; Info -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050729"><span id="local-6989586621679050735"><span class="annot"><span class="annottext">Info -&gt; Info -&gt; Bool
 (Info -&gt; Info -&gt; Bool) -&gt; (Info -&gt; Info -&gt; Bool) -&gt; Eq Info
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
 $c== :: Info -&gt; Info -&gt; Bool
@@ -137,17 +138,17 @@ $c== :: Info -&gt; Info -&gt; Bool
 $c/= :: Info -&gt; Info -&gt; Bool
 /= :: Info -&gt; Info -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-63"></span><span>
-</span><span id="line-64"></span><span class="annot"><span class="hs-comment">-- | One directory entry: identity metadata plus a locator.</span></span><span>
-</span><span id="line-65"></span><span class="hs-keyword">data</span><span> </span><span id="Entry"><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-var">Entry</span></a></span></span><span> </span><span id="local-6989586621679047137"><span class="annot"><a href="#local-6989586621679047137"><span class="hs-identifier hs-type">addr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Entry"><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-var">Entry</span></a></span></span><span>
-</span><span id="line-66"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="hs-comment">-- | Identity metadata, preserved by every operation.</span></span><span>
-</span><span id="line-67"></span><span>    </span><span id="info"><span class="annot"><span class="annottext">forall addr. Entry addr -&gt; Info
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><span class="hs-comment">-- | One directory entry: identity metadata plus a locator.</span></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">data</span><span> </span><span id="Entry"><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-var">Entry</span></a></span></span><span> </span><span id="local-6989586621679050551"><span class="annot"><a href="#local-6989586621679050551"><span class="hs-identifier hs-type">addr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Entry"><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-var">Entry</span></a></span></span><span>
+</span><span id="line-67"></span><span>  </span><span class="hs-special">{</span><span> </span><span class="annot"><span class="hs-comment">-- | Identity metadata, preserved by every operation.</span></span><span>
+</span><span id="line-68"></span><span>    </span><span id="info"><span class="annot"><span class="annottext">forall addr. Entry addr -&gt; Info
 </span><a href="Graft.Directory.html#info"><span class="hs-identifier hs-var hs-var">info</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Info"><span class="hs-identifier hs-type">Info</span></a></span><span class="hs-special">,</span><span>
-</span><span id="line-68"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Where to go next to reach this entry's process.</span></span><span>
-</span><span id="line-69"></span><span>    </span><span id="locator"><span class="annot"><span class="annottext">forall addr. Entry addr -&gt; addr
-</span><a href="Graft.Directory.html#locator"><span class="hs-identifier hs-var hs-var">locator</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679047137"><span class="hs-identifier hs-type">addr</span></a></span><span>
-</span><span id="line-70"></span><span>  </span><span class="hs-special">}</span><span>
-</span><span id="line-71"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047323"><span id="local-6989586621679047328"><span id="local-6989586621679047333"><span class="annot"><span class="annottext">Int -&gt; Entry addr -&gt; ShowS
+</span><span id="line-69"></span><span>    </span><span class="annot"><span class="hs-comment">-- | Where to go next to reach this entry's process.</span></span><span>
+</span><span id="line-70"></span><span>    </span><span id="locator"><span class="annot"><span class="annottext">forall addr. Entry addr -&gt; addr
+</span><a href="Graft.Directory.html#locator"><span class="hs-identifier hs-var hs-var">locator</span></a></span></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="#local-6989586621679050551"><span class="hs-identifier hs-type">addr</span></a></span><span>
+</span><span id="line-71"></span><span>  </span><span class="hs-special">}</span><span>
+</span><span id="line-72"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050746"><span id="local-6989586621679050751"><span id="local-6989586621679050756"><span class="annot"><span class="annottext">Int -&gt; Entry addr -&gt; ShowS
 [Entry addr] -&gt; ShowS
 Entry addr -&gt; String
 (Int -&gt; Entry addr -&gt; ShowS)
@@ -165,7 +166,7 @@ $cshow :: forall addr. Show addr =&gt; Entry addr -&gt; String
 show :: Entry addr -&gt; String
 $cshowList :: forall addr. Show addr =&gt; [Entry addr] -&gt; ShowS
 showList :: [Entry addr] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047338"><span id="local-6989586621679047342"><span class="annot"><span class="annottext">Entry addr -&gt; Entry addr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050761"><span id="local-6989586621679050765"><span class="annot"><span class="annottext">Entry addr -&gt; Entry addr -&gt; Bool
 (Entry addr -&gt; Entry addr -&gt; Bool)
 -&gt; (Entry addr -&gt; Entry addr -&gt; Bool) -&gt; Eq (Entry addr)
 forall addr. Eq addr =&gt; Entry addr -&gt; Entry addr -&gt; Bool
@@ -175,22 +176,22 @@ $c== :: forall addr. Eq addr =&gt; Entry addr -&gt; Entry addr -&gt; Bool
 $c/= :: forall addr. Eq addr =&gt; Entry addr -&gt; Entry addr -&gt; Bool
 /= :: Entry addr -&gt; Entry addr -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-72"></span><span>
-</span><span id="line-73"></span><span class="hs-comment">-- | A next hop, relative to the node holding the directory: the node</span><span>
-</span><span id="line-74"></span><span class="hs-comment">-- itself, its parent, or one of its children by name. It stands where</span><span>
-</span><span id="line-75"></span><span class="hs-comment">-- a real mesh has a carrier address (a UDP endpoint, a Unix socket</span><span>
-</span><span id="line-76"></span><span class="hs-comment">-- path) &#8212; always the address of an adjacent neighbour, meaningful</span><span>
-</span><span id="line-77"></span><span class="hs-comment">-- only from where the holder stands. A shipped locator is therefore</span><span>
-</span><span id="line-78"></span><span class="hs-comment">-- meaningless at its receiver until rewritten into the receiver's</span><span>
-</span><span id="line-79"></span><span class="hs-comment">-- frame.</span><span>
-</span><span id="line-80"></span><span class="hs-keyword">data</span><span> </span><span id="NextHop"><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-var">NextHop</span></a></span></span><span>
-</span><span id="line-81"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process is the holder itself.</span></span><span>
-</span><span id="line-82"></span><span>    </span><span id="Self"><span class="annot"><a href="Graft.Directory.html#Self"><span class="hs-identifier hs-var">Self</span></a></span></span><span>
-</span><span id="line-83"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process is reachable through the holder's parent.</span></span><span>
-</span><span id="line-84"></span><span>    </span><span id="Parent"><span class="annot"><a href="Graft.Directory.html#Parent"><span class="hs-identifier hs-var">Parent</span></a></span></span><span>
-</span><span id="line-85"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process lives in the subtree of this child.</span></span><span>
-</span><span id="line-86"></span><span>    </span><span id="Child"><span class="annot"><a href="Graft.Directory.html#Child"><span class="hs-identifier hs-var">Child</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span>
-</span><span id="line-87"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047350"><span id="local-6989586621679047354"><span id="local-6989586621679047358"><span class="annot"><span class="annottext">Int -&gt; NextHop -&gt; ShowS
+</span><span id="line-73"></span><span>
+</span><span id="line-74"></span><span class="hs-comment">-- | A next hop, relative to the node holding the directory: the node</span><span>
+</span><span id="line-75"></span><span class="hs-comment">-- itself, its parent, or one of its children by name. It stands where</span><span>
+</span><span id="line-76"></span><span class="hs-comment">-- a real mesh has a carrier address (a UDP endpoint, a Unix socket</span><span>
+</span><span id="line-77"></span><span class="hs-comment">-- path) &#8212; always the address of an adjacent neighbour, meaningful</span><span>
+</span><span id="line-78"></span><span class="hs-comment">-- only from where the holder stands. A shipped locator is therefore</span><span>
+</span><span id="line-79"></span><span class="hs-comment">-- meaningless at its receiver until rewritten into the receiver's</span><span>
+</span><span id="line-80"></span><span class="hs-comment">-- frame.</span><span>
+</span><span id="line-81"></span><span class="hs-keyword">data</span><span> </span><span id="NextHop"><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-var">NextHop</span></a></span></span><span>
+</span><span id="line-82"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process is the holder itself.</span></span><span>
+</span><span id="line-83"></span><span>    </span><span id="Self"><span class="annot"><a href="Graft.Directory.html#Self"><span class="hs-identifier hs-var">Self</span></a></span></span><span>
+</span><span id="line-84"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process is reachable through the holder's parent.</span></span><span>
+</span><span id="line-85"></span><span>    </span><span id="Parent"><span class="annot"><a href="Graft.Directory.html#Parent"><span class="hs-identifier hs-var">Parent</span></a></span></span><span>
+</span><span id="line-86"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | The entry's process lives in the subtree of this child.</span></span><span>
+</span><span id="line-87"></span><span>    </span><span id="Child"><span class="annot"><a href="Graft.Directory.html#Child"><span class="hs-identifier hs-var">Child</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span>
+</span><span id="line-88"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050773"><span id="local-6989586621679050777"><span id="local-6989586621679050781"><span class="annot"><span class="annottext">Int -&gt; NextHop -&gt; ShowS
 [NextHop] -&gt; ShowS
 NextHop -&gt; String
 (Int -&gt; NextHop -&gt; ShowS)
@@ -203,7 +204,7 @@ $cshow :: NextHop -&gt; String
 show :: NextHop -&gt; String
 $cshowList :: [NextHop] -&gt; ShowS
 showList :: [NextHop] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047361"><span id="local-6989586621679047367"><span class="annot"><span class="annottext">NextHop -&gt; NextHop -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050784"><span id="local-6989586621679050790"><span class="annot"><span class="annottext">NextHop -&gt; NextHop -&gt; Bool
 (NextHop -&gt; NextHop -&gt; Bool)
 -&gt; (NextHop -&gt; NextHop -&gt; Bool) -&gt; Eq NextHop
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -212,14 +213,14 @@ $c== :: NextHop -&gt; NextHop -&gt; Bool
 $c/= :: NextHop -&gt; NextHop -&gt; Bool
 /= :: NextHop -&gt; NextHop -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-88"></span><span>
-</span><span id="line-89"></span><span class="annot"><span class="hs-comment">-- | A PID's slot in a directory.</span></span><span>
-</span><span id="line-90"></span><span class="hs-keyword">data</span><span> </span><span id="Slot"><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-var">Slot</span></a></span></span><span> </span><span id="local-6989586621679047180"><span class="annot"><a href="#local-6989586621679047180"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-91"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | Exactly one live claim on this PID.</span></span><span>
-</span><span id="line-92"></span><span>    </span><span id="Claimed"><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-var">Claimed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047180"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-93"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | An ownership error: distinct entries claimed one PID.</span></span><span>
-</span><span id="line-94"></span><span>    </span><span id="Contested"><span class="annot"><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span></span><span>
-</span><span id="line-95"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047373"><span id="local-6989586621679047378"><span id="local-6989586621679047383"><span class="annot"><span class="annottext">Int -&gt; Slot addr -&gt; ShowS
+</span><span id="line-89"></span><span>
+</span><span id="line-90"></span><span class="annot"><span class="hs-comment">-- | A PID's slot in a directory.</span></span><span>
+</span><span id="line-91"></span><span class="hs-keyword">data</span><span> </span><span id="Slot"><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-var">Slot</span></a></span></span><span> </span><span id="local-6989586621679050594"><span class="annot"><a href="#local-6989586621679050594"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-92"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="hs-comment">-- | Exactly one live claim on this PID.</span></span><span>
+</span><span id="line-93"></span><span>    </span><span id="Claimed"><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-var">Claimed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050594"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-94"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="hs-comment">-- | An ownership error: distinct entries claimed one PID.</span></span><span>
+</span><span id="line-95"></span><span>    </span><span id="Contested"><span class="annot"><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span></span><span>
+</span><span id="line-96"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050796"><span id="local-6989586621679050801"><span id="local-6989586621679050806"><span class="annot"><span class="annottext">Int -&gt; Slot addr -&gt; ShowS
 [Slot addr] -&gt; ShowS
 Slot addr -&gt; String
 (Int -&gt; Slot addr -&gt; ShowS)
@@ -237,7 +238,7 @@ $cshow :: forall addr. Show addr =&gt; Slot addr -&gt; String
 show :: Slot addr -&gt; String
 $cshowList :: forall addr. Show addr =&gt; [Slot addr] -&gt; ShowS
 showList :: [Slot addr] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047388"><span id="local-6989586621679047394"><span class="annot"><span class="annottext">Slot addr -&gt; Slot addr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050811"><span id="local-6989586621679050817"><span class="annot"><span class="annottext">Slot addr -&gt; Slot addr -&gt; Bool
 (Slot addr -&gt; Slot addr -&gt; Bool)
 -&gt; (Slot addr -&gt; Slot addr -&gt; Bool) -&gt; Eq (Slot addr)
 forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Bool
@@ -247,10 +248,10 @@ $c== :: forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Bool
 $c/= :: forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Bool
 /= :: Slot addr -&gt; Slot addr -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-96"></span><span>
-</span><span id="line-97"></span><span class="annot"><span class="hs-comment">-- | A directory: the visible map from PIDs to slots.</span></span><span>
-</span><span id="line-98"></span><span class="hs-keyword">newtype</span><span> </span><span id="Directory"><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span></span><span> </span><span id="local-6989586621679047173"><span class="annot"><a href="#local-6989586621679047173"><span class="hs-identifier hs-type">addr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Directory"><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047173"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-99"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047401"><span id="local-6989586621679047408"><span id="local-6989586621679047413"><span class="annot"><span class="annottext">Int -&gt; Directory addr -&gt; ShowS
+</span><span id="line-97"></span><span>
+</span><span id="line-98"></span><span class="annot"><span class="hs-comment">-- | A directory: the visible map from PIDs to slots.</span></span><span>
+</span><span id="line-99"></span><span class="hs-keyword">newtype</span><span> </span><span id="Directory"><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span></span><span> </span><span id="local-6989586621679050587"><span class="annot"><a href="#local-6989586621679050587"><span class="hs-identifier hs-type">addr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Directory"><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050587"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050824"><span id="local-6989586621679050831"><span id="local-6989586621679050836"><span class="annot"><span class="annottext">Int -&gt; Directory addr -&gt; ShowS
 [Directory addr] -&gt; ShowS
 Directory addr -&gt; String
 (Int -&gt; Directory addr -&gt; ShowS)
@@ -268,7 +269,7 @@ $cshow :: forall addr. Show addr =&gt; Directory addr -&gt; String
 show :: Directory addr -&gt; String
 $cshowList :: forall addr. Show addr =&gt; [Directory addr] -&gt; ShowS
 showList :: [Directory addr] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047419"><span id="local-6989586621679047426"><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050842"><span id="local-6989586621679050849"><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Bool
 (Directory addr -&gt; Directory addr -&gt; Bool)
 -&gt; (Directory addr -&gt; Directory addr -&gt; Bool)
 -&gt; Eq (Directory addr)
@@ -279,51 +280,51 @@ $c== :: forall addr. Eq addr =&gt; Directory addr -&gt; Directory addr -&gt; Boo
 $c/= :: forall addr. Eq addr =&gt; Directory addr -&gt; Directory addr -&gt; Bool
 /= :: Directory addr -&gt; Directory addr -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-100"></span><span>
-</span><span id="line-101"></span><span class="annot"><span class="hs-comment">-- | Merge is the semigroup operation; see 'merge'.</span></span><span>
-</span><span id="line-102"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679047167"><span id="local-6989586621679047437"><span id="local-6989586621679047442"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047167"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047167"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-103"></span><span>  </span><span id="local-6989586621679047449"><span class="annot"><span class="annottext">&lt;&gt; :: Directory addr -&gt; Directory addr -&gt; Directory addr
+</span><span id="line-101"></span><span>
+</span><span id="line-102"></span><span class="annot"><span class="hs-comment">-- | Merge is the semigroup operation; see 'merge'.</span></span><span>
+</span><span id="line-103"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679050581"><span id="local-6989586621679050860"><span id="local-6989586621679050865"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050581"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050581"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-104"></span><span>  </span><span id="local-6989586621679050872"><span class="annot"><span class="annottext">&lt;&gt; :: Directory addr -&gt; Directory addr -&gt; Directory addr
 </span><span class="hs-operator hs-var hs-var hs-var">(&lt;&gt;)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Directory addr
 forall addr.
 Eq addr =&gt;
 Directory addr -&gt; Directory addr -&gt; Directory addr
 </span><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span>
-</span><span id="line-104"></span><span>
-</span><span id="line-105"></span><span class="annot"><span class="hs-comment">-- | 'empty' is the merge identity.</span></span><span>
-</span><span id="line-106"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679047170"><span id="local-6989586621679047456"><span id="local-6989586621679047461"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047170"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047170"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-107"></span><span>  </span><span id="local-6989586621679047465"><span class="annot"><span class="annottext">mempty :: Directory addr
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="annot"><span class="hs-comment">-- | 'empty' is the merge identity.</span></span><span>
+</span><span id="line-107"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679050584"><span id="local-6989586621679050879"><span id="local-6989586621679050884"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050584"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050584"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-108"></span><span>  </span><span id="local-6989586621679050888"><span class="annot"><span class="annottext">mempty :: Directory addr
 </span><span class="hs-identifier hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr
 forall addr. Directory addr
 </span><a href="Graft.Directory.html#empty"><span class="hs-identifier hs-var">empty</span></a></span><span>
-</span><span id="line-108"></span><span>
-</span><span id="line-109"></span><span class="annot"><span class="hs-comment">-- | The directory with no entries.</span></span><span>
-</span><span id="line-110"></span><span id="local-6989586621679047171"><span class="annot"><a href="Graft.Directory.html#empty"><span class="hs-identifier hs-type">empty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047171"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-111"></span><span id="empty"><span class="annot"><span class="annottext">empty :: forall addr. Directory addr
+</span><span id="line-109"></span><span>
+</span><span id="line-110"></span><span class="annot"><span class="hs-comment">-- | The directory with no entries.</span></span><span>
+</span><span id="line-111"></span><span id="local-6989586621679050585"><span class="annot"><a href="Graft.Directory.html#empty"><span class="hs-identifier hs-type">empty</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050585"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-112"></span><span id="empty"><span class="annot"><span class="annottext">empty :: forall addr. Directory addr
 </span><a href="Graft.Directory.html#empty"><span class="hs-identifier hs-var hs-var">empty</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Directory addr
 forall addr. Map Pid (Slot addr) -&gt; Directory addr
 </span><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
 forall k a. Map k a
 </span><span class="hs-identifier hs-var">Map.empty</span></span><span>
-</span><span id="line-112"></span><span>
-</span><span id="line-113"></span><span class="annot"><span class="hs-comment">-- | The directory with one claimed entry.</span></span><span>
-</span><span id="line-114"></span><span id="local-6989586621679047176"><span class="annot"><a href="Graft.Directory.html#singleton"><span class="hs-identifier hs-type">singleton</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047176"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047176"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-115"></span><span id="singleton"><span class="annot"><span class="annottext">singleton :: forall addr. Pid -&gt; Entry addr -&gt; Directory addr
-</span><a href="Graft.Directory.html#singleton"><span class="hs-identifier hs-var hs-var">singleton</span></a></span></span><span> </span><span id="local-6989586621679047467"><span class="annot"><span class="annottext">Pid
-</span><a href="#local-6989586621679047467"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679047468"><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047468"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Directory addr
+</span><span id="line-113"></span><span>
+</span><span id="line-114"></span><span class="annot"><span class="hs-comment">-- | The directory with one claimed entry.</span></span><span>
+</span><span id="line-115"></span><span id="local-6989586621679050590"><span class="annot"><a href="Graft.Directory.html#singleton"><span class="hs-identifier hs-type">singleton</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050590"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050590"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-116"></span><span id="singleton"><span class="annot"><span class="annottext">singleton :: forall addr. Pid -&gt; Entry addr -&gt; Directory addr
+</span><a href="Graft.Directory.html#singleton"><span class="hs-identifier hs-var hs-var">singleton</span></a></span></span><span> </span><span id="local-6989586621679050890"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679050890"><span class="hs-identifier hs-var">p</span></a></span></span><span> </span><span id="local-6989586621679050891"><span class="annot"><span class="annottext">Entry addr
+</span><a href="#local-6989586621679050891"><span class="hs-identifier hs-var">e</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Directory addr
 forall addr. Map Pid (Slot addr) -&gt; Directory addr
 </span><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; Slot addr -&gt; Map Pid (Slot addr)
 forall k a. k -&gt; a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.singleton</span></span><span> </span><span class="annot"><span class="annottext">Pid
-</span><a href="#local-6989586621679047467"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Entry addr -&gt; Slot addr
+</span><a href="#local-6989586621679050890"><span class="hs-identifier hs-var">p</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Entry addr -&gt; Slot addr
 forall addr. Entry addr -&gt; Slot addr
 </span><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-var">Claimed</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047468"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
-</span><span id="line-116"></span><span>
-</span><span id="line-117"></span><span class="hs-comment">-- | Merge singletons; duplicate PIDs with distinct entries become</span><span>
-</span><span id="line-118"></span><span class="hs-comment">-- 'Contested'.</span><span>
-</span><span id="line-119"></span><span id="local-6989586621679047181"><span class="annot"><a href="Graft.Directory.html#fromList"><span class="hs-identifier hs-type">fromList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047181"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047181"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047181"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-120"></span><span id="fromList"><span class="annot"><span class="annottext">fromList :: forall addr. Eq addr =&gt; [(Pid, Entry addr)] -&gt; Directory addr
+</span><a href="#local-6989586621679050891"><span class="hs-identifier hs-var">e</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-117"></span><span>
+</span><span id="line-118"></span><span class="hs-comment">-- | Merge singletons; duplicate PIDs with distinct entries become</span><span>
+</span><span id="line-119"></span><span class="hs-comment">-- 'Contested'.</span><span>
+</span><span id="line-120"></span><span id="local-6989586621679050595"><span class="annot"><a href="Graft.Directory.html#fromList"><span class="hs-identifier hs-type">fromList</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050595"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050595"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050595"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-121"></span><span id="fromList"><span class="annot"><span class="annottext">fromList :: forall addr. Eq addr =&gt; [(Pid, Entry addr)] -&gt; Directory addr
 </span><a href="Graft.Directory.html#fromList"><span class="hs-identifier hs-var hs-var">fromList</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((Pid, Entry addr) -&gt; Directory addr)
 -&gt; [(Pid, Entry addr)] -&gt; Directory addr
 forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
@@ -336,39 +337,72 @@ forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
 </span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">Pid -&gt; Entry addr -&gt; Directory addr
 forall addr. Pid -&gt; Entry addr -&gt; Directory addr
 </span><a href="Graft.Directory.html#singleton"><span class="hs-identifier hs-var">singleton</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-121"></span><span>
-</span><span id="line-122"></span><span class="hs-comment">-- | Join two slots. Equal claims are one claim; distinct claims are</span><span>
-</span><span id="line-123"></span><span class="hs-comment">-- an ownership error; 'Contested' absorbs.</span><span>
-</span><span id="line-124"></span><span id="local-6989586621679047189"><span class="annot"><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-type">joinSlot</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047189"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047189"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047189"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047189"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-125"></span><span id="joinSlot"><span class="annot"><span class="annottext">joinSlot :: forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Slot addr
-</span><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-var hs-var">joinSlot</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679047481"><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047481"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679047482"><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047482"><span class="hs-identifier hs-var">e'</span></a></span></span><span class="hs-special">)</span><span>
-</span><span id="line-126"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047481"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Entry addr -&gt; Bool
+</span><span id="line-122"></span><span>
+</span><span id="line-123"></span><span class="hs-comment">-- | Rewrite every claimed locator into another address frame.</span><span>
+</span><span id="line-124"></span><span class="hs-comment">-- 'Contested' slots remain contested because they no longer retain</span><span>
+</span><span id="line-125"></span><span class="hs-comment">-- either claim.</span><span>
+</span><span id="line-126"></span><span id="local-6989586621679050603"><span id="local-6989586621679050604"><span class="annot"><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier hs-type">mapLocators</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="#local-6989586621679050603"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679050604"><span class="hs-identifier hs-type">b</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050603"><span class="hs-identifier hs-type">a</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050604"><span class="hs-identifier hs-type">b</span></a></span></span></span><span>
+</span><span id="line-127"></span><span id="mapLocators"><span class="annot"><span class="annottext">mapLocators :: forall a b. (a -&gt; b) -&gt; Directory a -&gt; Directory b
+</span><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier hs-var hs-var">mapLocators</span></a></span></span><span> </span><span id="local-6989586621679050902"><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679050902"><span class="hs-identifier hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679050903"><span class="annot"><span class="annottext">Map Pid (Slot a)
+</span><a href="#local-6989586621679050903"><span class="hs-identifier hs-var">entries</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot b) -&gt; Directory b
+forall addr. Map Pid (Slot addr) -&gt; Directory addr
+</span><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Slot a -&gt; Slot b) -&gt; Map Pid (Slot a) -&gt; Map Pid (Slot b)
+forall a b. (a -&gt; b) -&gt; Map Pid a -&gt; Map Pid b
+forall (f :: * -&gt; *) a b. Functor f =&gt; (a -&gt; b) -&gt; f a -&gt; f b
+</span><span class="hs-identifier hs-var">fmap</span></span><span> </span><span class="annot"><span class="annottext">Slot a -&gt; Slot b
+</span><a href="#local-6989586621679050904"><span class="hs-identifier hs-var">mapSlot</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot a)
+</span><a href="#local-6989586621679050903"><span class="hs-identifier hs-var">entries</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-128"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-129"></span><span>    </span><span id="local-6989586621679050904"><span class="annot"><span class="annottext">mapSlot :: Slot a -&gt; Slot b
+</span><a href="#local-6989586621679050904"><span class="hs-identifier hs-var hs-var">mapSlot</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span id="local-6989586621679050905"><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679050905"><span class="hs-identifier hs-var">entryInfo</span></a></span></span><span> </span><span id="local-6989586621679050906"><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679050906"><span class="hs-identifier hs-var">entryLocator</span></a></span></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-130"></span><span>      </span><span class="annot"><span class="annottext">Entry b -&gt; Slot b
+forall addr. Entry addr -&gt; Slot addr
+</span><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-var">Claimed</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Info -&gt; b -&gt; Entry b
+forall addr. Info -&gt; addr -&gt; Entry addr
+</span><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-var">Entry</span></a></span><span> </span><span class="annot"><span class="annottext">Info
+</span><a href="#local-6989586621679050905"><span class="hs-identifier hs-var">entryInfo</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">a -&gt; b
+</span><a href="#local-6989586621679050902"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">a
+</span><a href="#local-6989586621679050906"><span class="hs-identifier hs-var">entryLocator</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-131"></span><span>    </span><span class="annot"><a href="#local-6989586621679050904"><span class="hs-identifier hs-var">mapSlot</span></a></span><span> </span><span class="annot"><span class="annottext">Slot a
+</span><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slot b
+forall addr. Slot addr
+</span><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span><span>
+</span><span id="line-132"></span><span>
+</span><span id="line-133"></span><span class="hs-comment">-- | Join two slots. Equal claims are one claim; distinct claims are</span><span>
+</span><span id="line-134"></span><span class="hs-comment">-- an ownership error; 'Contested' absorbs.</span><span>
+</span><span id="line-135"></span><span id="local-6989586621679050611"><span class="annot"><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-type">joinSlot</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050611"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050611"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050611"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Slot"><span class="hs-identifier hs-type">Slot</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050611"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-136"></span><span id="joinSlot"><span class="annot"><span class="annottext">joinSlot :: forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Slot addr
+</span><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-var hs-var">joinSlot</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679050911"><span class="annot"><span class="annottext">Entry addr
+</span><a href="#local-6989586621679050911"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679050912"><span class="annot"><span class="annottext">Entry addr
+</span><a href="#local-6989586621679050912"><span class="hs-identifier hs-var">e'</span></a></span></span><span class="hs-special">)</span><span>
+</span><span id="line-137"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Entry addr
+</span><a href="#local-6989586621679050911"><span class="hs-identifier hs-var">e</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Entry addr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047482"><span class="hs-identifier hs-var">e'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Slot addr
+</span><a href="#local-6989586621679050912"><span class="hs-identifier hs-var">e'</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Slot addr
 forall addr. Entry addr -&gt; Slot addr
 </span><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-var">Claimed</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047481"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-127"></span><span class="annot"><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-var">joinSlot</span></a></span><span> </span><span class="annot"><span class="annottext">Slot addr
+</span><a href="#local-6989586621679050911"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-138"></span><span class="annot"><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-var">joinSlot</span></a></span><span> </span><span class="annot"><span class="annottext">Slot addr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Slot addr
 </span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Slot addr
 forall addr. Slot addr
 </span><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span><span>
-</span><span id="line-128"></span><span>
-</span><span id="line-129"></span><span class="hs-comment">-- | Merge two directories, PID by PID.</span><span>
-</span><span id="line-130"></span><span class="hs-comment">--</span><span>
-</span><span id="line-131"></span><span class="hs-comment">-- Merge is associative, commutative, and idempotent, so state built</span><span>
-</span><span id="line-132"></span><span class="hs-comment">-- by merging is insensitive to duplicated and reordered deliveries.</span><span>
-</span><span id="line-133"></span><span id="local-6989586621679047483"><span class="annot"><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-type">merge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047483"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047483"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047483"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047483"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
-</span><span id="line-134"></span><span id="merge"><span class="annot"><span class="annottext">merge :: forall addr.
+</span><span id="line-139"></span><span>
+</span><span id="line-140"></span><span class="hs-comment">-- | Merge two directories, PID by PID.</span><span>
+</span><span id="line-141"></span><span class="hs-comment">--</span><span>
+</span><span id="line-142"></span><span class="hs-comment">-- Merge is associative, commutative, and idempotent, so state built</span><span>
+</span><span id="line-143"></span><span class="hs-comment">-- by merging is insensitive to duplicated and reordered deliveries.</span><span>
+</span><span id="line-144"></span><span id="local-6989586621679050913"><span class="annot"><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-type">merge</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050913"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050913"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050913"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050913"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-145"></span><span id="merge"><span class="annot"><span class="annottext">merge :: forall addr.
 Eq addr =&gt;
 Directory addr -&gt; Directory addr -&gt; Directory addr
-</span><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679047487"><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047487"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679047488"><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047488"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Directory addr
+</span><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-var hs-var">merge</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679050917"><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050917"><span class="hs-identifier hs-var">a</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679050918"><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050918"><span class="hs-identifier hs-var">b</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Directory addr
 forall addr. Map Pid (Slot addr) -&gt; Directory addr
 </span><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-var">Directory</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Slot addr -&gt; Slot addr -&gt; Slot addr)
 -&gt; Map Pid (Slot addr)
@@ -378,76 +412,76 @@ forall k a. Ord k =&gt; (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Ma
 </span><span class="hs-identifier hs-var">Map.unionWith</span></span><span> </span><span class="annot"><span class="annottext">Slot addr -&gt; Slot addr -&gt; Slot addr
 forall addr. Eq addr =&gt; Slot addr -&gt; Slot addr -&gt; Slot addr
 </span><a href="Graft.Directory.html#joinSlot"><span class="hs-identifier hs-var">joinSlot</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047487"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047488"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-135"></span><span>
-</span><span id="line-136"></span><span class="hs-comment">-- | The information order induced by merge: @d `leq` d'@ when @d'@</span><span>
-</span><span id="line-137"></span><span class="hs-comment">-- already contains everything @d@ says.</span><span>
-</span><span id="line-138"></span><span id="local-6989586621679047490"><span class="annot"><a href="Graft.Directory.html#leq"><span class="hs-identifier hs-type">leq</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679047490"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047490"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047490"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
-</span><span id="line-139"></span><span id="leq"><span class="annot"><span class="annottext">leq :: forall addr. Eq addr =&gt; Directory addr -&gt; Directory addr -&gt; Bool
-</span><a href="Graft.Directory.html#leq"><span class="hs-identifier hs-var hs-var">leq</span></a></span></span><span> </span><span id="local-6989586621679047495"><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047495"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679047496"><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047496"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Directory addr
+</span><a href="#local-6989586621679050917"><span class="hs-identifier hs-var">a</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050918"><span class="hs-identifier hs-var">b</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-146"></span><span>
+</span><span id="line-147"></span><span class="hs-comment">-- | The information order induced by merge: @d `leq` d'@ when @d'@</span><span>
+</span><span id="line-148"></span><span class="hs-comment">-- already contains everything @d@ says.</span><span>
+</span><span id="line-149"></span><span id="local-6989586621679050920"><span class="annot"><a href="Graft.Directory.html#leq"><span class="hs-identifier hs-type">leq</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679050920"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050920"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050920"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-150"></span><span id="leq"><span class="annot"><span class="annottext">leq :: forall addr. Eq addr =&gt; Directory addr -&gt; Directory addr -&gt; Bool
+</span><a href="Graft.Directory.html#leq"><span class="hs-identifier hs-var hs-var">leq</span></a></span></span><span> </span><span id="local-6989586621679050925"><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679050925"><span class="hs-identifier hs-var">d</span></a></span></span><span> </span><span id="local-6989586621679050926"><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679050926"><span class="hs-identifier hs-var">d'</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Directory addr
 forall addr.
 Eq addr =&gt;
 Directory addr -&gt; Directory addr -&gt; Directory addr
 </span><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047495"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047496"><span class="hs-identifier hs-var">d'</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Bool
+</span><a href="#local-6989586621679050925"><span class="hs-identifier hs-var">d</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679050926"><span class="hs-identifier hs-var">d'</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Directory addr -&gt; Bool
 forall a. Eq a =&gt; a -&gt; a -&gt; Bool
 </span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047496"><span class="hs-identifier hs-var">d'</span></a></span><span>
-</span><span id="line-140"></span><span>
-</span><span id="line-141"></span><span class="annot"><span class="hs-comment">-- | The claimed entries of a directory.</span></span><span>
-</span><span id="line-142"></span><span id="local-6989586621679047195"><span class="annot"><a href="Graft.Directory.html#claimed"><span class="hs-identifier hs-type">claimed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047195"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047195"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span><span>
-</span><span id="line-143"></span><span id="claimed"><span class="annot"><span class="annottext">claimed :: forall addr. Directory addr -&gt; Map Pid (Entry addr)
-</span><a href="Graft.Directory.html#claimed"><span class="hs-identifier hs-var hs-var">claimed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679047497"><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047497"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Slot addr -&gt; Maybe (Entry addr))
+</span><a href="#local-6989586621679050926"><span class="hs-identifier hs-var">d'</span></a></span><span>
+</span><span id="line-151"></span><span>
+</span><span id="line-152"></span><span class="annot"><span class="hs-comment">-- | The claimed entries of a directory.</span></span><span>
+</span><span id="line-153"></span><span id="local-6989586621679050617"><span class="annot"><a href="Graft.Directory.html#claimed"><span class="hs-identifier hs-type">claimed</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050617"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Entry"><span class="hs-identifier hs-type">Entry</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050617"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-154"></span><span id="claimed"><span class="annot"><span class="annottext">claimed :: forall addr. Directory addr -&gt; Map Pid (Entry addr)
+</span><a href="Graft.Directory.html#claimed"><span class="hs-identifier hs-var hs-var">claimed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679050927"><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050927"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Slot addr -&gt; Maybe (Entry addr))
 -&gt; Map Pid (Slot addr) -&gt; Map Pid (Entry addr)
 forall a b k. (a -&gt; Maybe b) -&gt; Map k a -&gt; Map k b
 </span><span class="hs-identifier hs-var">Map.mapMaybe</span></span><span> </span><span class="annot"><span class="annottext">Slot addr -&gt; Maybe (Entry addr)
 forall {addr}. Slot addr -&gt; Maybe (Entry addr)
-</span><a href="#local-6989586621679047499"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047497"><span class="hs-identifier hs-var">m</span></a></span><span>
-</span><span id="line-144"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-145"></span><span>    </span><span id="local-6989586621679047499"><span class="annot"><span class="annottext">f :: Slot addr -&gt; Maybe (Entry addr)
-</span><a href="#local-6989586621679047499"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679047500"><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047500"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Maybe (Entry addr)
+</span><a href="#local-6989586621679050929"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050927"><span class="hs-identifier hs-var">m</span></a></span><span>
+</span><span id="line-155"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-156"></span><span>    </span><span id="local-6989586621679050929"><span class="annot"><span class="annottext">f :: Slot addr -&gt; Maybe (Entry addr)
+</span><a href="#local-6989586621679050929"><span class="hs-identifier hs-var hs-var">f</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span id="local-6989586621679050930"><span class="annot"><span class="annottext">Entry addr
+</span><a href="#local-6989586621679050930"><span class="hs-identifier hs-var">e</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Entry addr -&gt; Maybe (Entry addr)
 forall a. a -&gt; Maybe a
 </span><span class="hs-identifier hs-var">Just</span></span><span> </span><span class="annot"><span class="annottext">Entry addr
-</span><a href="#local-6989586621679047500"><span class="hs-identifier hs-var">e</span></a></span><span>
-</span><span id="line-146"></span><span>    </span><span class="annot"><a href="#local-6989586621679047499"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Slot addr
+</span><a href="#local-6989586621679050930"><span class="hs-identifier hs-var">e</span></a></span><span>
+</span><span id="line-157"></span><span>    </span><span class="annot"><a href="#local-6989586621679050929"><span class="hs-identifier hs-var">f</span></a></span><span> </span><span class="annot"><span class="annottext">Slot addr
 </span><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Maybe (Entry addr)
 forall a. Maybe a
 </span><span class="hs-identifier hs-var">Nothing</span></span><span>
-</span><span id="line-147"></span><span>
-</span><span id="line-148"></span><span class="annot"><span class="hs-comment">-- | The contested PIDs of a directory.</span></span><span>
-</span><span id="line-149"></span><span id="local-6989586621679047201"><span class="annot"><a href="Graft.Directory.html#contested"><span class="hs-identifier hs-type">contested</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047201"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span></span><span>
-</span><span id="line-150"></span><span id="contested"><span class="annot"><span class="annottext">contested :: forall addr. Directory addr -&gt; Set Pid
-</span><a href="Graft.Directory.html#contested"><span class="hs-identifier hs-var hs-var">contested</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679047501"><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047501"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Set Pid
+</span><span id="line-158"></span><span>
+</span><span id="line-159"></span><span class="annot"><span class="hs-comment">-- | The contested PIDs of a directory.</span></span><span>
+</span><span id="line-160"></span><span id="local-6989586621679050623"><span class="annot"><a href="Graft.Directory.html#contested"><span class="hs-identifier hs-type">contested</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050623"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span></span><span>
+</span><span id="line-161"></span><span id="contested"><span class="annot"><span class="annottext">contested :: forall addr. Directory addr -&gt; Set Pid
+</span><a href="Graft.Directory.html#contested"><span class="hs-identifier hs-var hs-var">contested</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span id="local-6989586621679050931"><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050931"><span class="hs-identifier hs-var">m</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr) -&gt; Set Pid
 forall k a. Map k a -&gt; Set k
 </span><span class="hs-identifier hs-var">Map.keysSet</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Slot addr -&gt; Bool) -&gt; Map Pid (Slot addr) -&gt; Map Pid (Slot addr)
 forall a k. (a -&gt; Bool) -&gt; Map k a -&gt; Map k a
 </span><span class="hs-identifier hs-var">Map.filter</span></span><span> </span><span class="annot"><span class="annottext">Slot addr -&gt; Bool
 forall {addr}. Slot addr -&gt; Bool
-</span><a href="#local-6989586621679047504"><span class="hs-identifier hs-var">isContested</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
-</span><a href="#local-6989586621679047501"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-151"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-152"></span><span>    </span><span id="local-6989586621679047504"><span class="annot"><span class="annottext">isContested :: Slot addr -&gt; Bool
-</span><a href="#local-6989586621679047504"><span class="hs-identifier hs-var hs-var">isContested</span></a></span></span><span> </span><span class="annot"><span class="annottext">Slot addr
+</span><a href="#local-6989586621679050934"><span class="hs-identifier hs-var">isContested</span></a></span><span> </span><span class="annot"><span class="annottext">Map Pid (Slot addr)
+</span><a href="#local-6989586621679050931"><span class="hs-identifier hs-var">m</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-162"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-163"></span><span>    </span><span id="local-6989586621679050934"><span class="annot"><span class="annottext">isContested :: Slot addr -&gt; Bool
+</span><a href="#local-6989586621679050934"><span class="hs-identifier hs-var hs-var">isContested</span></a></span></span><span> </span><span class="annot"><span class="annottext">Slot addr
 </span><a href="Graft.Directory.html#Contested"><span class="hs-identifier hs-var">Contested</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">True</span></span><span>
-</span><span id="line-153"></span><span>    </span><span class="annot"><a href="#local-6989586621679047504"><span class="hs-identifier hs-var">isContested</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr
+</span><span id="line-164"></span><span>    </span><span class="annot"><a href="#local-6989586621679050934"><span class="hs-identifier hs-var">isContested</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Claimed"><span class="hs-identifier hs-type">Claimed</span></a></span><span> </span><span class="annot"><span class="annottext">Entry addr
 </span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">False</span></span><span>
-</span><span id="line-154"></span><span>
-</span><span id="line-155"></span><span class="hs-comment">-- | The verdict on a directory: sound, or disputed at the named</span><span>
-</span><span id="line-156"></span><span class="hs-comment">-- PIDs. Well-formed runs keep every directory 'Sound'; a disputed</span><span>
-</span><span id="line-157"></span><span class="hs-comment">-- PID yields no claim, so it is unreachable rather than arbitrarily</span><span>
-</span><span id="line-158"></span><span class="hs-comment">-- routed.</span><span>
-</span><span id="line-159"></span><span class="hs-keyword">data</span><span> </span><span id="Health"><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier hs-var">Health</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Sound"><span class="annot"><a href="Graft.Directory.html#Sound"><span class="hs-identifier hs-var">Sound</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Disputed"><span class="annot"><a href="Graft.Directory.html#Disputed"><span class="hs-identifier hs-var">Disputed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span class="hs-special">)</span><span>
-</span><span id="line-160"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679047508"><span id="local-6989586621679047514"><span id="local-6989586621679047518"><span class="annot"><span class="annottext">Int -&gt; Health -&gt; ShowS
+</span><span id="line-165"></span><span>
+</span><span id="line-166"></span><span class="hs-comment">-- | The verdict on a directory: sound, or disputed at the named</span><span>
+</span><span id="line-167"></span><span class="hs-comment">-- PIDs. Well-formed runs keep every directory 'Sound'; a disputed</span><span>
+</span><span id="line-168"></span><span class="hs-comment">-- PID yields no claim, so it is unreachable rather than arbitrarily</span><span>
+</span><span id="line-169"></span><span class="hs-comment">-- routed.</span><span>
+</span><span id="line-170"></span><span class="hs-keyword">data</span><span> </span><span id="Health"><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier hs-var">Health</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Sound"><span class="annot"><a href="Graft.Directory.html#Sound"><span class="hs-identifier hs-var">Sound</span></a></span></span><span> </span><span class="hs-glyph">|</span><span> </span><span id="Disputed"><span class="annot"><a href="Graft.Directory.html#Disputed"><span class="hs-identifier hs-var">Disputed</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Set</span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-171"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679050938"><span id="local-6989586621679050944"><span id="local-6989586621679050948"><span class="annot"><span class="annottext">Int -&gt; Health -&gt; ShowS
 [Health] -&gt; ShowS
 Health -&gt; String
 (Int -&gt; Health -&gt; ShowS)
@@ -460,7 +494,7 @@ $cshow :: Health -&gt; String
 show :: Health -&gt; String
 $cshowList :: [Health] -&gt; ShowS
 showList :: [Health] -&gt; ShowS
-</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679047521"><span id="local-6989586621679047528"><span class="annot"><span class="annottext">Health -&gt; Health -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679050951"><span id="local-6989586621679050958"><span class="annot"><span class="annottext">Health -&gt; Health -&gt; Bool
 (Health -&gt; Health -&gt; Bool)
 -&gt; (Health -&gt; Health -&gt; Bool) -&gt; Eq Health
 forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
@@ -469,25 +503,25 @@ $c== :: Health -&gt; Health -&gt; Bool
 $c/= :: Health -&gt; Health -&gt; Bool
 /= :: Health -&gt; Health -&gt; Bool
 </span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
-</span><span id="line-161"></span><span>
-</span><span id="line-162"></span><span class="annot"><span class="hs-comment">-- | Classify a directory by its contested slots.</span></span><span>
-</span><span id="line-163"></span><span id="local-6989586621679047212"><span class="annot"><a href="Graft.Directory.html#health"><span class="hs-identifier hs-type">health</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679047212"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier hs-type">Health</span></a></span></span><span>
-</span><span id="line-164"></span><span id="health"><span class="annot"><span class="annottext">health :: forall addr. Directory addr -&gt; Health
-</span><a href="Graft.Directory.html#health"><span class="hs-identifier hs-var hs-var">health</span></a></span></span><span> </span><span id="local-6989586621679047531"><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047531"><span class="hs-identifier hs-var">d</span></a></span></span><span>
-</span><span id="line-165"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set Pid -&gt; Bool
+</span><span id="line-172"></span><span>
+</span><span id="line-173"></span><span class="annot"><span class="hs-comment">-- | Classify a directory by its contested slots.</span></span><span>
+</span><span id="line-174"></span><span id="local-6989586621679050634"><span class="annot"><a href="Graft.Directory.html#health"><span class="hs-identifier hs-type">health</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679050634"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Health"><span class="hs-identifier hs-type">Health</span></a></span></span><span>
+</span><span id="line-175"></span><span id="health"><span class="annot"><span class="annottext">health :: forall addr. Directory addr -&gt; Health
+</span><a href="Graft.Directory.html#health"><span class="hs-identifier hs-var hs-var">health</span></a></span></span><span> </span><span id="local-6989586621679050961"><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679050961"><span class="hs-identifier hs-var">d</span></a></span></span><span>
+</span><span id="line-176"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Set Pid -&gt; Bool
 forall a. Set a -&gt; Bool
 </span><span class="hs-identifier hs-var">Set.null</span></span><span> </span><span class="annot"><span class="annottext">Set Pid
-</span><a href="#local-6989586621679047533"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Health
+</span><a href="#local-6989586621679050963"><span class="hs-identifier hs-var">cs</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Health
 </span><a href="Graft.Directory.html#Sound"><span class="hs-identifier hs-var">Sound</span></a></span><span>
-</span><span id="line-166"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span id="line-177"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
 </span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Set Pid -&gt; Health
 </span><a href="Graft.Directory.html#Disputed"><span class="hs-identifier hs-var">Disputed</span></a></span><span> </span><span class="annot"><span class="annottext">Set Pid
-</span><a href="#local-6989586621679047533"><span class="hs-identifier hs-var">cs</span></a></span><span>
-</span><span id="line-167"></span><span>  </span><span class="hs-keyword">where</span><span>
-</span><span id="line-168"></span><span>    </span><span id="local-6989586621679047533"><span class="annot"><span class="annottext">cs :: Set Pid
-</span><a href="#local-6989586621679047533"><span class="hs-identifier hs-var hs-var">cs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Set Pid
+</span><a href="#local-6989586621679050963"><span class="hs-identifier hs-var">cs</span></a></span><span>
+</span><span id="line-178"></span><span>  </span><span class="hs-keyword">where</span><span>
+</span><span id="line-179"></span><span>    </span><span id="local-6989586621679050963"><span class="annot"><span class="annottext">cs :: Set Pid
+</span><a href="#local-6989586621679050963"><span class="hs-identifier hs-var hs-var">cs</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Directory addr -&gt; Set Pid
 forall addr. Directory addr -&gt; Set Pid
 </span><a href="Graft.Directory.html#contested"><span class="hs-identifier hs-var">contested</span></a></span><span> </span><span class="annot"><span class="annottext">Directory addr
-</span><a href="#local-6989586621679047531"><span class="hs-identifier hs-var">d</span></a></span><span>
-</span><span id="line-169"></span></pre></body></html>
+</span><a href="#local-6989586621679050961"><span class="hs-identifier hs-var">d</span></a></span><span>
+</span><span id="line-180"></span></pre></body></html>

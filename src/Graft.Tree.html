@@ -1,2 +1,404 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Graft.Tree</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-2"></span></pre></body></html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- Module      : Graft.Tree</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- Description : Recursive summaries of attachment-scoped failure domains.</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- A flat link table preserves only the immediate link that supplied</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- each directory. A 'Forest' applies the same provenance structure</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- recursively, so a finalizer can identify and mask exactly the</span><span>
+</span><span id="line-8"></span><span class="hs-comment">-- subtree whose lifetime has ended.</span><span>
+</span><span id="line-9"></span><span class="hs-comment">--</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- Summary state grows by merge. This merge is the join in the</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- replicated information order. Its borrowed projection may shrink:</span><span>
+</span><span id="line-12"></span><span class="hs-comment">-- 'Finalized' is above every live summary in the replicated order but</span><span>
+</span><span id="line-13"></span><span class="hs-comment">-- contributes nothing to 'flattenSummary'.</span><span>
+</span><span id="line-14"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Graft.Tree.html"><span class="hs-identifier">Graft.Tree</span></a></span><span>
+</span><span id="line-15"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Domain identity</span></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier">DomainId</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-17"></span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Recursive summaries</span></span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier">Summary</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier">Forest</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#emptyForest"><span class="hs-identifier">emptyForest</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#singletonDomain"><span class="hs-identifier">singletonDomain</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#fromDomains"><span class="hs-identifier">fromDomains</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-24"></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Merge</span></span><span>
+</span><span id="line-26"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier">mergeSummary</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-27"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#mergeForest"><span class="hs-identifier">mergeForest</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Borrowed projection</span></span><span>
+</span><span id="line-30"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier">flattenSummary</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-31"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#flattenForest"><span class="hs-identifier">flattenForest</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-32"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#materializeThrough"><span class="hs-identifier">materializeThrough</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Graft.Tree.html#materializeForestThrough"><span class="hs-identifier">materializeForestThrough</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-35"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-36"></span><span>
+</span><span id="line-37"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-39"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Graft.Directory.html"><span class="hs-identifier">Graft.Directory</span></a></span><span>
+</span><span id="line-40"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier">Directory</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-41"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier">NextHop</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Child"><span class="hs-identifier">Child</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-42"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier">Pid</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-43"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier">mapLocators</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-44"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-45"></span><span>
+</span><span id="line-46"></span><span class="annot"><span class="hs-comment">-- | One publication lifetime. Reconnection uses a fresh domain ID.</span></span><span>
+</span><span id="line-47"></span><span class="hs-keyword">newtype</span><span> </span><span id="DomainId"><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier hs-var">DomainId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="DomainId"><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier hs-var">DomainId</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051457"><span id="local-6989586621679051463"><span id="local-6989586621679051467"><span class="annot"><span class="annottext">Int -&gt; DomainId -&gt; ShowS
+[DomainId] -&gt; ShowS
+DomainId -&gt; String
+(Int -&gt; DomainId -&gt; ShowS)
+-&gt; (DomainId -&gt; String) -&gt; ([DomainId] -&gt; ShowS) -&gt; Show DomainId
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; DomainId -&gt; ShowS
+showsPrec :: Int -&gt; DomainId -&gt; ShowS
+$cshow :: DomainId -&gt; String
+show :: DomainId -&gt; String
+$cshowList :: [DomainId] -&gt; ShowS
+showList :: [DomainId] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051472"><span id="local-6989586621679051477"><span class="annot"><span class="annottext">DomainId -&gt; DomainId -&gt; Bool
+(DomainId -&gt; DomainId -&gt; Bool)
+-&gt; (DomainId -&gt; DomainId -&gt; Bool) -&gt; Eq DomainId
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: DomainId -&gt; DomainId -&gt; Bool
+== :: DomainId -&gt; DomainId -&gt; Bool
+$c/= :: DomainId -&gt; DomainId -&gt; Bool
+/= :: DomainId -&gt; DomainId -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051486"><span id="local-6989586621679051490"><span id="local-6989586621679051494"><span id="local-6989586621679051498"><span id="local-6989586621679051502"><span id="local-6989586621679051506"><span id="local-6989586621679051510"><span class="annot"><span class="annottext">Eq DomainId
+Eq DomainId =&gt;
+(DomainId -&gt; DomainId -&gt; Ordering)
+-&gt; (DomainId -&gt; DomainId -&gt; Bool)
+-&gt; (DomainId -&gt; DomainId -&gt; Bool)
+-&gt; (DomainId -&gt; DomainId -&gt; Bool)
+-&gt; (DomainId -&gt; DomainId -&gt; Bool)
+-&gt; (DomainId -&gt; DomainId -&gt; DomainId)
+-&gt; (DomainId -&gt; DomainId -&gt; DomainId)
+-&gt; Ord DomainId
+DomainId -&gt; DomainId -&gt; Bool
+DomainId -&gt; DomainId -&gt; Ordering
+DomainId -&gt; DomainId -&gt; DomainId
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: DomainId -&gt; DomainId -&gt; Ordering
+compare :: DomainId -&gt; DomainId -&gt; Ordering
+$c&lt; :: DomainId -&gt; DomainId -&gt; Bool
+&lt; :: DomainId -&gt; DomainId -&gt; Bool
+$c&lt;= :: DomainId -&gt; DomainId -&gt; Bool
+&lt;= :: DomainId -&gt; DomainId -&gt; Bool
+$c&gt; :: DomainId -&gt; DomainId -&gt; Bool
+&gt; :: DomainId -&gt; DomainId -&gt; Bool
+$c&gt;= :: DomainId -&gt; DomainId -&gt; Bool
+&gt;= :: DomainId -&gt; DomainId -&gt; Bool
+$cmax :: DomainId -&gt; DomainId -&gt; DomainId
+max :: DomainId -&gt; DomainId -&gt; DomainId
+$cmin :: DomainId -&gt; DomainId -&gt; DomainId
+min :: DomainId -&gt; DomainId -&gt; DomainId
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>
+</span><span id="line-50"></span><span class="hs-comment">-- | The state published for one domain. A live summary carries the</span><span>
+</span><span id="line-51"></span><span class="hs-comment">-- domain's local payload and the summaries of its immediate children.</span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- Finalization masks both the payload and the complete child forest.</span><span>
+</span><span id="line-53"></span><span class="hs-keyword">data</span><span> </span><span id="Summary"><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-var">Summary</span></a></span></span><span> </span><span id="local-6989586621679051417"><span class="annot"><a href="#local-6989586621679051417"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-54"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Live"><span class="annot"><a href="Graft.Tree.html#Live"><span class="hs-identifier hs-var">Live</span></a></span></span><span> </span><span class="annot"><a href="#local-6989586621679051417"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051417"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Finalized"><span class="annot"><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span></span><span>
+</span><span id="line-56"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051524"><span id="local-6989586621679051531"><span id="local-6989586621679051536"><span class="annot"><span class="annottext">Int -&gt; Summary payload -&gt; ShowS
+[Summary payload] -&gt; ShowS
+Summary payload -&gt; String
+(Int -&gt; Summary payload -&gt; ShowS)
+-&gt; (Summary payload -&gt; String)
+-&gt; ([Summary payload] -&gt; ShowS)
+-&gt; Show (Summary payload)
+forall payload. Show payload =&gt; Int -&gt; Summary payload -&gt; ShowS
+forall payload. Show payload =&gt; [Summary payload] -&gt; ShowS
+forall payload. Show payload =&gt; Summary payload -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall payload. Show payload =&gt; Int -&gt; Summary payload -&gt; ShowS
+showsPrec :: Int -&gt; Summary payload -&gt; ShowS
+$cshow :: forall payload. Show payload =&gt; Summary payload -&gt; String
+show :: Summary payload -&gt; String
+$cshowList :: forall payload. Show payload =&gt; [Summary payload] -&gt; ShowS
+showList :: [Summary payload] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051541"><span id="local-6989586621679051550"><span class="annot"><span class="annottext">Summary payload -&gt; Summary payload -&gt; Bool
+(Summary payload -&gt; Summary payload -&gt; Bool)
+-&gt; (Summary payload -&gt; Summary payload -&gt; Bool)
+-&gt; Eq (Summary payload)
+forall payload.
+Eq payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall payload.
+Eq payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Bool
+== :: Summary payload -&gt; Summary payload -&gt; Bool
+$c/= :: forall payload.
+Eq payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Bool
+/= :: Summary payload -&gt; Summary payload -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-57"></span><span>
+</span><span id="line-58"></span><span class="hs-comment">-- | Sibling domains keyed by their non-reusable identities. Absence</span><span>
+</span><span id="line-59"></span><span class="hs-comment">-- from this map is the bottom value for a domain.</span><span>
+</span><span id="line-60"></span><span class="hs-keyword">newtype</span><span> </span><span id="Forest"><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-var">Forest</span></a></span></span><span> </span><span id="local-6989586621679051401"><span class="annot"><a href="#local-6989586621679051401"><span class="hs-identifier hs-type">payload</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="Forest"><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-var">Forest</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier hs-type">DomainId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051401"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051556"><span id="local-6989586621679051563"><span id="local-6989586621679051567"><span class="annot"><span class="annottext">Int -&gt; Forest payload -&gt; ShowS
+[Forest payload] -&gt; ShowS
+Forest payload -&gt; String
+(Int -&gt; Forest payload -&gt; ShowS)
+-&gt; (Forest payload -&gt; String)
+-&gt; ([Forest payload] -&gt; ShowS)
+-&gt; Show (Forest payload)
+forall payload. Show payload =&gt; Int -&gt; Forest payload -&gt; ShowS
+forall payload. Show payload =&gt; [Forest payload] -&gt; ShowS
+forall payload. Show payload =&gt; Forest payload -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall payload. Show payload =&gt; Int -&gt; Forest payload -&gt; ShowS
+showsPrec :: Int -&gt; Forest payload -&gt; ShowS
+$cshow :: forall payload. Show payload =&gt; Forest payload -&gt; String
+show :: Forest payload -&gt; String
+$cshowList :: forall payload. Show payload =&gt; [Forest payload] -&gt; ShowS
+showList :: [Forest payload] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051573"><span id="local-6989586621679051580"><span class="annot"><span class="annottext">Forest payload -&gt; Forest payload -&gt; Bool
+(Forest payload -&gt; Forest payload -&gt; Bool)
+-&gt; (Forest payload -&gt; Forest payload -&gt; Bool)
+-&gt; Eq (Forest payload)
+forall payload.
+Eq payload =&gt;
+Forest payload -&gt; Forest payload -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall payload.
+Eq payload =&gt;
+Forest payload -&gt; Forest payload -&gt; Bool
+== :: Forest payload -&gt; Forest payload -&gt; Bool
+$c/= :: forall payload.
+Eq payload =&gt;
+Forest payload -&gt; Forest payload -&gt; Bool
+/= :: Forest payload -&gt; Forest payload -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-62"></span><span>
+</span><span id="line-63"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679051392"><span id="local-6989586621679051590"><span id="local-6989586621679051595"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051392"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051392"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-64"></span><span>  </span><span id="local-6989586621679051602"><span class="annot"><span class="annottext">&lt;&gt; :: Summary payload -&gt; Summary payload -&gt; Summary payload
+</span><span class="hs-operator hs-var hs-var hs-var">(&lt;&gt;)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Summary payload -&gt; Summary payload -&gt; Summary payload
+forall payload.
+Semigroup payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Summary payload
+</span><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-var">mergeSummary</span></a></span><span>
+</span><span id="line-65"></span><span>
+</span><span id="line-66"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679051395"><span id="local-6989586621679051606"><span id="local-6989586621679051611"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051395"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051395"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-67"></span><span>  </span><span id="local-6989586621679051617"><span class="annot"><span class="annottext">&lt;&gt; :: Forest payload -&gt; Forest payload -&gt; Forest payload
+</span><span class="hs-operator hs-var hs-var hs-var">(&lt;&gt;)</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Forest payload -&gt; Forest payload -&gt; Forest payload
+forall payload.
+Semigroup payload =&gt;
+Forest payload -&gt; Forest payload -&gt; Forest payload
+</span><a href="Graft.Tree.html#mergeForest"><span class="hs-identifier hs-var">mergeForest</span></a></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-keyword">instance</span><span> </span><span id="local-6989586621679051398"><span id="local-6989586621679051624"><span id="local-6989586621679051629"><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051398"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051398"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span></span></span></span><span> </span><span class="hs-keyword">where</span><span>
+</span><span id="line-70"></span><span>  </span><span id="local-6989586621679051633"><span class="annot"><span class="annottext">mempty :: Forest payload
+</span><span class="hs-identifier hs-var hs-var hs-var">mempty</span></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Forest payload
+forall payload. Forest payload
+</span><a href="Graft.Tree.html#emptyForest"><span class="hs-identifier hs-var">emptyForest</span></a></span><span>
+</span><span id="line-71"></span><span>
+</span><span id="line-72"></span><span class="annot"><span class="hs-comment">-- | A forest containing no known domains.</span></span><span>
+</span><span id="line-73"></span><span id="local-6989586621679051399"><span class="annot"><a href="Graft.Tree.html#emptyForest"><span class="hs-identifier hs-type">emptyForest</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051399"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-74"></span><span id="emptyForest"><span class="annot"><span class="annottext">emptyForest :: forall payload. Forest payload
+</span><a href="Graft.Tree.html#emptyForest"><span class="hs-identifier hs-var hs-var">emptyForest</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload) -&gt; Forest payload
+forall payload. Map DomainId (Summary payload) -&gt; Forest payload
+</span><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-var">Forest</span></a></span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-75"></span><span>
+</span><span id="line-76"></span><span class="annot"><span class="hs-comment">-- | A forest containing one named domain summary.</span></span><span>
+</span><span id="line-77"></span><span id="local-6989586621679051404"><span class="annot"><a href="Graft.Tree.html#singletonDomain"><span class="hs-identifier hs-type">singletonDomain</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier hs-type">DomainId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051404"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051404"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-78"></span><span id="singletonDomain"><span class="annot"><span class="annottext">singletonDomain :: forall payload. DomainId -&gt; Summary payload -&gt; Forest payload
+</span><a href="Graft.Tree.html#singletonDomain"><span class="hs-identifier hs-var hs-var">singletonDomain</span></a></span></span><span> </span><span id="local-6989586621679051635"><span class="annot"><span class="annottext">DomainId
+</span><a href="#local-6989586621679051635"><span class="hs-identifier hs-var">domain</span></a></span></span><span> </span><span id="local-6989586621679051636"><span class="annot"><span class="annottext">Summary payload
+</span><a href="#local-6989586621679051636"><span class="hs-identifier hs-var">summary</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload) -&gt; Forest payload
+forall payload. Map DomainId (Summary payload) -&gt; Forest payload
+</span><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-var">Forest</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">DomainId -&gt; Summary payload -&gt; Map DomainId (Summary payload)
+forall k a. k -&gt; a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.singleton</span></span><span> </span><span class="annot"><span class="annottext">DomainId
+</span><a href="#local-6989586621679051635"><span class="hs-identifier hs-var">domain</span></a></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><a href="#local-6989586621679051636"><span class="hs-identifier hs-var">summary</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>
+</span><span id="line-80"></span><span class="annot"><span class="hs-comment">-- | Build a forest by merging summaries with the same domain ID.</span></span><span>
+</span><span id="line-81"></span><span id="local-6989586621679051408"><span class="annot"><a href="Graft.Tree.html#fromDomains"><span class="hs-identifier hs-type">fromDomains</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051408"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="hs-special">[</span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#DomainId"><span class="hs-identifier hs-type">DomainId</span></a></span><span class="hs-special">,</span><span> </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051408"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span class="hs-special">]</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051408"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-82"></span><span id="fromDomains"><span class="annot"><span class="annottext">fromDomains :: forall payload.
+Semigroup payload =&gt;
+[(DomainId, Summary payload)] -&gt; Forest payload
+</span><a href="Graft.Tree.html#fromDomains"><span class="hs-identifier hs-var hs-var">fromDomains</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">((DomainId, Summary payload) -&gt; Forest payload)
+-&gt; [(DomainId, Summary payload)] -&gt; Forest payload
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(DomainId -&gt; Summary payload -&gt; Forest payload)
+-&gt; (DomainId, Summary payload) -&gt; Forest payload
+forall a b c. (a -&gt; b -&gt; c) -&gt; (a, b) -&gt; c
+</span><span class="hs-identifier hs-var">uncurry</span></span><span> </span><span class="annot"><span class="annottext">DomainId -&gt; Summary payload -&gt; Forest payload
+forall payload. DomainId -&gt; Summary payload -&gt; Forest payload
+</span><a href="Graft.Tree.html#singletonDomain"><span class="hs-identifier hs-var">singletonDomain</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-83"></span><span>
+</span><span id="line-84"></span><span class="hs-comment">-- | Merge two observations of one domain. A finalizer dominates every</span><span>
+</span><span id="line-85"></span><span class="hs-comment">-- live summary; live summaries merge their payloads and children.</span><span>
+</span><span id="line-86"></span><span id="local-6989586621679051645"><span class="annot"><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-type">mergeSummary</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-87"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051645"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-88"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051645"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-89"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051645"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-90"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051645"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-91"></span><span id="mergeSummary"><span class="annot"><span class="annottext">mergeSummary :: forall payload.
+Semigroup payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Summary payload
+</span><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-var hs-var">mergeSummary</span></a></span></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Summary payload
+forall payload. Summary payload
+</span><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span>
+</span><span id="line-92"></span><span class="annot"><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-var">mergeSummary</span></a></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><span class="hs-identifier">_</span></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Summary payload
+forall payload. Summary payload
+</span><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span>
+</span><span id="line-93"></span><span class="annot"><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-var">mergeSummary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051650"><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051650"><span class="hs-identifier hs-var">local</span></a></span></span><span> </span><span id="local-6989586621679051651"><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051651"><span class="hs-identifier hs-var">children</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051652"><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051652"><span class="hs-identifier hs-var">local'</span></a></span></span><span> </span><span id="local-6989586621679051653"><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051653"><span class="hs-identifier hs-var">children'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><span class="annottext">payload -&gt; Forest payload -&gt; Summary payload
+forall payload. payload -&gt; Forest payload -&gt; Summary payload
+</span><a href="Graft.Tree.html#Live"><span class="hs-identifier hs-var">Live</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051650"><span class="hs-identifier hs-var">local</span></a></span><span> </span><span class="annot"><span class="annottext">payload -&gt; payload -&gt; payload
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051652"><span class="hs-identifier hs-var">local'</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051651"><span class="hs-identifier hs-var">children</span></a></span><span> </span><span class="annot"><span class="annottext">Forest payload -&gt; Forest payload -&gt; Forest payload
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051653"><span class="hs-identifier hs-var">children'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-95"></span><span>
+</span><span id="line-96"></span><span class="hs-comment">-- | Merge sibling forests by domain ID. Distinct IDs remain distinct;</span><span>
+</span><span id="line-97"></span><span class="hs-comment">-- summaries for the same ID merge recursively.</span><span>
+</span><span id="line-98"></span><span id="local-6989586621679051654"><span class="annot"><a href="Graft.Tree.html#mergeForest"><span class="hs-identifier hs-type">mergeForest</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-99"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Semigroup</span></span><span> </span><span class="annot"><a href="#local-6989586621679051654"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-100"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051654"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-101"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051654"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-102"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051654"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-103"></span><span id="mergeForest"><span class="annot"><span class="annottext">mergeForest :: forall payload.
+Semigroup payload =&gt;
+Forest payload -&gt; Forest payload -&gt; Forest payload
+</span><a href="Graft.Tree.html#mergeForest"><span class="hs-identifier hs-var hs-var">mergeForest</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span id="local-6989586621679051658"><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051658"><span class="hs-identifier hs-var">domains</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span id="local-6989586621679051659"><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051659"><span class="hs-identifier hs-var">domains'</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-104"></span><span>  </span><span class="annot"><span class="annottext">Map DomainId (Summary payload) -&gt; Forest payload
+forall payload. Map DomainId (Summary payload) -&gt; Forest payload
+</span><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-var">Forest</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">(Summary payload -&gt; Summary payload -&gt; Summary payload)
+-&gt; Map DomainId (Summary payload)
+-&gt; Map DomainId (Summary payload)
+-&gt; Map DomainId (Summary payload)
+forall k a. Ord k =&gt; (a -&gt; a -&gt; a) -&gt; Map k a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.unionWith</span></span><span> </span><span class="annot"><span class="annottext">Summary payload -&gt; Summary payload -&gt; Summary payload
+forall payload.
+Semigroup payload =&gt;
+Summary payload -&gt; Summary payload -&gt; Summary payload
+</span><a href="Graft.Tree.html#mergeSummary"><span class="hs-identifier hs-var">mergeSummary</span></a></span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051658"><span class="hs-identifier hs-var">domains</span></a></span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051659"><span class="hs-identifier hs-var">domains'</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-105"></span><span>
+</span><span id="line-106"></span><span class="hs-comment">-- | Materialize borrowed payload from one domain. Finalized domains</span><span>
+</span><span id="line-107"></span><span class="hs-comment">-- and all of their descendants are absent from the result.</span><span>
+</span><span id="line-108"></span><span id="local-6989586621679051421"><span class="annot"><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier hs-type">flattenSummary</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679051421"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051421"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679051421"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-109"></span><span id="flattenSummary"><span class="annot"><span class="annottext">flattenSummary :: forall payload. Monoid payload =&gt; Summary payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier hs-var hs-var">flattenSummary</span></a></span></span><span> </span><span class="annot"><span class="annottext">Summary payload
+</span><a href="Graft.Tree.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">payload
+forall a. Monoid a =&gt; a
+</span><span class="hs-identifier hs-var">mempty</span></span><span>
+</span><span id="line-110"></span><span class="annot"><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier hs-var">flattenSummary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051667"><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051667"><span class="hs-identifier hs-var">local</span></a></span></span><span> </span><span id="local-6989586621679051668"><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051668"><span class="hs-identifier hs-var">children</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">payload
+</span><a href="#local-6989586621679051667"><span class="hs-identifier hs-var">local</span></a></span><span> </span><span class="annot"><span class="annottext">payload -&gt; payload -&gt; payload
+forall a. Semigroup a =&gt; a -&gt; a -&gt; a
+</span><span class="hs-operator hs-var">&lt;&gt;</span></span><span> </span><span class="annot"><span class="annottext">Forest payload -&gt; payload
+forall payload. Monoid payload =&gt; Forest payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenForest"><span class="hs-identifier hs-var">flattenForest</span></a></span><span> </span><span class="annot"><span class="annottext">Forest payload
+</span><a href="#local-6989586621679051668"><span class="hs-identifier hs-var">children</span></a></span><span>
+</span><span id="line-111"></span><span>
+</span><span id="line-112"></span><span class="annot"><span class="hs-comment">-- | Materialize borrowed payload from every domain in a forest.</span></span><span>
+</span><span id="line-113"></span><span id="local-6989586621679051423"><span class="annot"><a href="Graft.Tree.html#flattenForest"><span class="hs-identifier hs-type">flattenForest</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Monoid</span></span><span> </span><span class="annot"><a href="#local-6989586621679051423"><span class="hs-identifier hs-type">payload</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span> </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051423"><span class="hs-identifier hs-type">payload</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="#local-6989586621679051423"><span class="hs-identifier hs-type">payload</span></a></span></span><span>
+</span><span id="line-114"></span><span id="flattenForest"><span class="annot"><span class="annottext">flattenForest :: forall payload. Monoid payload =&gt; Forest payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenForest"><span class="hs-identifier hs-var hs-var">flattenForest</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span id="local-6989586621679051673"><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051673"><span class="hs-identifier hs-var">domains</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">(Summary payload -&gt; payload) -&gt; [Summary payload] -&gt; payload
+forall m a. Monoid m =&gt; (a -&gt; m) -&gt; [a] -&gt; m
+forall (t :: * -&gt; *) m a.
+(Foldable t, Monoid m) =&gt;
+(a -&gt; m) -&gt; t a -&gt; m
+</span><span class="hs-identifier hs-var">foldMap</span></span><span> </span><span class="annot"><span class="annottext">Summary payload -&gt; payload
+forall payload. Monoid payload =&gt; Summary payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier hs-var">flattenSummary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map DomainId (Summary payload) -&gt; [Summary payload]
+forall k a. Map k a -&gt; [a]
+</span><span class="hs-identifier hs-var">Map.elems</span></span><span> </span><span class="annot"><span class="annottext">Map DomainId (Summary payload)
+</span><a href="#local-6989586621679051673"><span class="hs-identifier hs-var">domains</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-115"></span><span>
+</span><span id="line-116"></span><span class="hs-comment">-- | Materialize one child's recursive namespace publication in the</span><span>
+</span><span id="line-117"></span><span class="hs-comment">-- holder's address frame.</span><span>
+</span><span id="line-118"></span><span id="local-6989586621679051427"><span class="annot"><a href="Graft.Tree.html#materializeThrough"><span class="hs-identifier hs-type">materializeThrough</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-119"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679051427"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-120"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-121"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Summary"><span class="hs-identifier hs-type">Summary</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051427"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-122"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-type">NextHop</span></a></span></span><span>
+</span><span id="line-123"></span><span id="materializeThrough"><span class="annot"><span class="annottext">materializeThrough :: forall addr.
+Eq addr =&gt;
+Pid -&gt; Summary (Directory addr) -&gt; Directory NextHop
+</span><a href="Graft.Tree.html#materializeThrough"><span class="hs-identifier hs-var hs-var">materializeThrough</span></a></span></span><span> </span><span id="local-6989586621679051679"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051679"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-124"></span><span>  </span><span class="annot"><span class="annottext">(addr -&gt; NextHop) -&gt; Directory addr -&gt; Directory NextHop
+forall a b. (a -&gt; b) -&gt; Directory a -&gt; Directory b
+</span><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier hs-var">mapLocators</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NextHop -&gt; addr -&gt; NextHop
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; NextHop
+</span><a href="Graft.Directory.html#Child"><span class="hs-identifier hs-var">Child</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051679"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Directory addr -&gt; Directory NextHop)
+-&gt; (Summary (Directory addr) -&gt; Directory addr)
+-&gt; Summary (Directory addr)
+-&gt; Directory NextHop
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Summary (Directory addr) -&gt; Directory addr
+forall payload. Monoid payload =&gt; Summary payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenSummary"><span class="hs-identifier hs-var">flattenSummary</span></a></span><span>
+</span><span id="line-125"></span><span>
+</span><span id="line-126"></span><span class="hs-comment">-- | Materialize several incarnations reached through the same child.</span><span>
+</span><span id="line-127"></span><span class="hs-comment">-- Finalized old incarnations contribute nothing; a live replacement</span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- uses the same immediate next hop under a fresh domain ID.</span><span>
+</span><span id="line-129"></span><span id="local-6989586621679051440"><span class="annot"><a href="Graft.Tree.html#materializeForestThrough"><span class="hs-identifier hs-type">materializeForestThrough</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-130"></span><span>  </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Eq</span></span><span> </span><span class="annot"><a href="#local-6989586621679051440"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=&gt;</span><span>
+</span><span id="line-131"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-132"></span><span>  </span><span class="annot"><a href="Graft.Tree.html#Forest"><span class="hs-identifier hs-type">Forest</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051440"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-133"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-type">NextHop</span></a></span></span><span>
+</span><span id="line-134"></span><span id="materializeForestThrough"><span class="annot"><span class="annottext">materializeForestThrough :: forall addr.
+Eq addr =&gt;
+Pid -&gt; Forest (Directory addr) -&gt; Directory NextHop
+</span><a href="Graft.Tree.html#materializeForestThrough"><span class="hs-identifier hs-var hs-var">materializeForestThrough</span></a></span></span><span> </span><span id="local-6989586621679051685"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051685"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-135"></span><span>  </span><span class="annot"><span class="annottext">(addr -&gt; NextHop) -&gt; Directory addr -&gt; Directory NextHop
+forall a b. (a -&gt; b) -&gt; Directory a -&gt; Directory b
+</span><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier hs-var">mapLocators</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NextHop -&gt; addr -&gt; NextHop
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; NextHop
+</span><a href="Graft.Directory.html#Child"><span class="hs-identifier hs-var">Child</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051685"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">(Directory addr -&gt; Directory NextHop)
+-&gt; (Forest (Directory addr) -&gt; Directory addr)
+-&gt; Forest (Directory addr)
+-&gt; Directory NextHop
+forall b c a. (b -&gt; c) -&gt; (a -&gt; b) -&gt; a -&gt; c
+</span><span class="hs-operator hs-var">.</span></span><span> </span><span class="annot"><span class="annottext">Forest (Directory addr) -&gt; Directory addr
+forall payload. Monoid payload =&gt; Forest payload -&gt; payload
+</span><a href="Graft.Tree.html#flattenForest"><span class="hs-identifier hs-var">flattenForest</span></a></span><span>
+</span><span id="line-136"></span></pre></body></html>

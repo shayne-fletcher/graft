@@ -1,2 +1,478 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-keyword">module</span><span> </span><span class="hs-identifier">Graft.Link</span><span> </span><span class="hs-keyword">where</span><span>
-</span><span id="line-2"></span></pre></body></html>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"><html xmlns="http://www.w3.org/1999/xhtml"><head><link rel="stylesheet" type="text/css" href="style.css" /><script type="text/javascript" src="highlight.js"></script></head><body><pre><span class="hs-comment">-- |</span><span>
+</span><span id="line-2"></span><span class="hs-comment">-- Module      : Graft.Link</span><span>
+</span><span id="line-3"></span><span class="hs-comment">-- Description : Link lifetimes and their current publications.</span><span>
+</span><span id="line-4"></span><span class="hs-comment">--</span><span>
+</span><span id="line-5"></span><span class="hs-comment">-- Directory merge deliberately forgets where equal or competing</span><span>
+</span><span id="line-6"></span><span class="hs-comment">-- claims came from. A 'LinkTable' retains that provenance by keeping</span><span>
+</span><span id="line-7"></span><span class="hs-comment">-- one current directory publication for every live child link.</span><span>
+</span><span id="line-8"></span><span class="hs-comment">--</span><span>
+</span><span id="line-9"></span><span class="hs-comment">-- Publication replaces one link's previous contribution. Finalizing</span><span>
+</span><span id="line-10"></span><span class="hs-comment">-- the link removes that contribution from the projection and records</span><span>
+</span><span id="line-11"></span><span class="hs-comment">-- the terminal fact: a reconnect must use a new 'LinkId'.</span><span>
+</span><span id="line-12"></span><span class="hs-keyword">module</span><span> </span><span class="annot"><a href="Graft.Link.html"><span class="hs-identifier">Graft.Link</span></a></span><span>
+</span><span id="line-13"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="hs-comment">-- * Link identity</span></span><span>
+</span><span id="line-14"></span><span>    </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier">LinkId</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-15"></span><span>
+</span><span id="line-16"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Link table</span></span><span>
+</span><span id="line-17"></span><span>    </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier">LinkTable</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-18"></span><span>    </span><span class="annot"><a href="Graft.Link.html#LinkError"><span class="hs-identifier">LinkError</span></a></span><span> </span><span class="hs-special">(</span><span class="hs-glyph">..</span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-19"></span><span>    </span><span class="annot"><a href="Graft.Link.html#emptyLinks"><span class="hs-identifier">emptyLinks</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-20"></span><span>    </span><span class="annot"><a href="Graft.Link.html#attach"><span class="hs-identifier">attach</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-21"></span><span>    </span><span class="annot"><a href="Graft.Link.html#publish"><span class="hs-identifier">publish</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-22"></span><span>    </span><span class="annot"><a href="Graft.Link.html#finalize"><span class="hs-identifier">finalize</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-23"></span><span>
+</span><span id="line-24"></span><span>    </span><span class="annot"><span class="hs-comment">-- * Projection</span></span><span>
+</span><span id="line-25"></span><span>    </span><span class="annot"><a href="Graft.Link.html#materialize"><span class="hs-identifier">materialize</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-26"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-27"></span><span class="hs-keyword">where</span><span>
+</span><span id="line-28"></span><span>
+</span><span id="line-29"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier">Map</span></span><span class="hs-special">)</span><span>
+</span><span id="line-30"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><span class="hs-identifier">Data.Map.Strict</span></span><span> </span><span class="hs-keyword">qualified</span><span> </span><span class="hs-keyword">as</span><span> </span><span class="annot"><span class="hs-identifier">Map</span></span><span>
+</span><span id="line-31"></span><span class="hs-keyword">import</span><span> </span><span class="annot"><a href="Graft.Directory.html"><span class="hs-identifier">Graft.Directory</span></a></span><span>
+</span><span id="line-32"></span><span>  </span><span class="hs-special">(</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier">Directory</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-33"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier">NextHop</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Child"><span class="hs-identifier">Child</span></a></span><span class="hs-special">)</span><span class="hs-special">,</span><span>
+</span><span id="line-34"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier">Pid</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-35"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier">mapLocators</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-36"></span><span>    </span><span class="annot"><a href="Graft.Directory.html#merge"><span class="hs-identifier">merge</span></a></span><span class="hs-special">,</span><span>
+</span><span id="line-37"></span><span>  </span><span class="hs-special">)</span><span>
+</span><span id="line-38"></span><span>
+</span><span id="line-39"></span><span class="hs-comment">-- | One admitted incarnation of a parent-child relationship. A link</span><span>
+</span><span id="line-40"></span><span class="hs-comment">-- ID is never reused after finalization.</span><span>
+</span><span id="line-41"></span><span class="hs-keyword">newtype</span><span> </span><span id="LinkId"><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-var">LinkId</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LinkId"><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-var">LinkId</span></a></span></span><span> </span><span class="annot"><span class="hs-identifier hs-type">Int</span></span><span>
+</span><span id="line-42"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051106"><span id="local-6989586621679051112"><span id="local-6989586621679051116"><span class="annot"><span class="annottext">Int -&gt; LinkId -&gt; ShowS
+[LinkId] -&gt; ShowS
+LinkId -&gt; String
+(Int -&gt; LinkId -&gt; ShowS)
+-&gt; (LinkId -&gt; String) -&gt; ([LinkId] -&gt; ShowS) -&gt; Show LinkId
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LinkId -&gt; ShowS
+showsPrec :: Int -&gt; LinkId -&gt; ShowS
+$cshow :: LinkId -&gt; String
+show :: LinkId -&gt; String
+$cshowList :: [LinkId] -&gt; ShowS
+showList :: [LinkId] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051121"><span id="local-6989586621679051126"><span class="annot"><span class="annottext">LinkId -&gt; LinkId -&gt; Bool
+(LinkId -&gt; LinkId -&gt; Bool)
+-&gt; (LinkId -&gt; LinkId -&gt; Bool) -&gt; Eq LinkId
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LinkId -&gt; LinkId -&gt; Bool
+== :: LinkId -&gt; LinkId -&gt; Bool
+$c/= :: LinkId -&gt; LinkId -&gt; Bool
+/= :: LinkId -&gt; LinkId -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051135"><span id="local-6989586621679051139"><span id="local-6989586621679051143"><span id="local-6989586621679051147"><span id="local-6989586621679051151"><span id="local-6989586621679051155"><span id="local-6989586621679051159"><span class="annot"><span class="annottext">Eq LinkId
+Eq LinkId =&gt;
+(LinkId -&gt; LinkId -&gt; Ordering)
+-&gt; (LinkId -&gt; LinkId -&gt; Bool)
+-&gt; (LinkId -&gt; LinkId -&gt; Bool)
+-&gt; (LinkId -&gt; LinkId -&gt; Bool)
+-&gt; (LinkId -&gt; LinkId -&gt; Bool)
+-&gt; (LinkId -&gt; LinkId -&gt; LinkId)
+-&gt; (LinkId -&gt; LinkId -&gt; LinkId)
+-&gt; Ord LinkId
+LinkId -&gt; LinkId -&gt; Bool
+LinkId -&gt; LinkId -&gt; Ordering
+LinkId -&gt; LinkId -&gt; LinkId
+forall a.
+Eq a =&gt;
+(a -&gt; a -&gt; Ordering)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; Bool)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; (a -&gt; a -&gt; a)
+-&gt; Ord a
+$ccompare :: LinkId -&gt; LinkId -&gt; Ordering
+compare :: LinkId -&gt; LinkId -&gt; Ordering
+$c&lt; :: LinkId -&gt; LinkId -&gt; Bool
+&lt; :: LinkId -&gt; LinkId -&gt; Bool
+$c&lt;= :: LinkId -&gt; LinkId -&gt; Bool
+&lt;= :: LinkId -&gt; LinkId -&gt; Bool
+$c&gt; :: LinkId -&gt; LinkId -&gt; Bool
+&gt; :: LinkId -&gt; LinkId -&gt; Bool
+$c&gt;= :: LinkId -&gt; LinkId -&gt; Bool
+&gt;= :: LinkId -&gt; LinkId -&gt; Bool
+$cmax :: LinkId -&gt; LinkId -&gt; LinkId
+max :: LinkId -&gt; LinkId -&gt; LinkId
+$cmin :: LinkId -&gt; LinkId -&gt; LinkId
+min :: LinkId -&gt; LinkId -&gt; LinkId
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Ord</span></span></span></span></span></span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-43"></span><span>
+</span><span id="line-44"></span><span class="hs-comment">-- | The state retained for one link ID. Admission and the first</span><span>
+</span><span id="line-45"></span><span class="hs-comment">-- committed publication are distinct states.</span><span>
+</span><span id="line-46"></span><span class="hs-keyword">data</span><span> </span><span id="Attachment"><span class="annot"><a href="Graft.Link.html#Attachment"><span class="hs-identifier hs-var">Attachment</span></a></span></span><span> </span><span id="local-6989586621679051077"><span class="annot"><a href="#local-6989586621679051077"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-47"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="Admitted"><span class="annot"><a href="Graft.Link.html#Admitted"><span class="hs-identifier hs-var">Admitted</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span>
+</span><span id="line-48"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Live"><span class="annot"><a href="Graft.Link.html#Live"><span class="hs-identifier hs-var">Live</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051077"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-49"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="Finalized"><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span>
+</span><span id="line-50"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051175"><span id="local-6989586621679051187"><span id="local-6989586621679051192"><span class="annot"><span class="annottext">Int -&gt; Attachment addr -&gt; ShowS
+[Attachment addr] -&gt; ShowS
+Attachment addr -&gt; String
+(Int -&gt; Attachment addr -&gt; ShowS)
+-&gt; (Attachment addr -&gt; String)
+-&gt; ([Attachment addr] -&gt; ShowS)
+-&gt; Show (Attachment addr)
+forall addr. Show addr =&gt; Int -&gt; Attachment addr -&gt; ShowS
+forall addr. Show addr =&gt; [Attachment addr] -&gt; ShowS
+forall addr. Show addr =&gt; Attachment addr -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall addr. Show addr =&gt; Int -&gt; Attachment addr -&gt; ShowS
+showsPrec :: Int -&gt; Attachment addr -&gt; ShowS
+$cshow :: forall addr. Show addr =&gt; Attachment addr -&gt; String
+show :: Attachment addr -&gt; String
+$cshowList :: forall addr. Show addr =&gt; [Attachment addr] -&gt; ShowS
+showList :: [Attachment addr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051197"><span id="local-6989586621679051209"><span class="annot"><span class="annottext">Attachment addr -&gt; Attachment addr -&gt; Bool
+(Attachment addr -&gt; Attachment addr -&gt; Bool)
+-&gt; (Attachment addr -&gt; Attachment addr -&gt; Bool)
+-&gt; Eq (Attachment addr)
+forall addr. Eq addr =&gt; Attachment addr -&gt; Attachment addr -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall addr. Eq addr =&gt; Attachment addr -&gt; Attachment addr -&gt; Bool
+== :: Attachment addr -&gt; Attachment addr -&gt; Bool
+$c/= :: forall addr. Eq addr =&gt; Attachment addr -&gt; Attachment addr -&gt; Bool
+/= :: Attachment addr -&gt; Attachment addr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-51"></span><span>
+</span><span id="line-52"></span><span class="hs-comment">-- | The state of every admitted link incarnation, including terminal</span><span>
+</span><span id="line-53"></span><span class="hs-comment">-- finalizers that prevent an old ID from being reused.</span><span>
+</span><span id="line-54"></span><span class="hs-keyword">newtype</span><span> </span><span id="LinkTable"><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span></span><span> </span><span id="local-6989586621679051060"><span class="annot"><a href="#local-6989586621679051060"><span class="hs-identifier hs-type">addr</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span id="LinkTable"><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="hs-identifier hs-type">Map</span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Attachment"><span class="hs-identifier hs-type">Attachment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051060"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-55"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051215"><span id="local-6989586621679051222"><span id="local-6989586621679051227"><span class="annot"><span class="annottext">Int -&gt; LinkTable addr -&gt; ShowS
+[LinkTable addr] -&gt; ShowS
+LinkTable addr -&gt; String
+(Int -&gt; LinkTable addr -&gt; ShowS)
+-&gt; (LinkTable addr -&gt; String)
+-&gt; ([LinkTable addr] -&gt; ShowS)
+-&gt; Show (LinkTable addr)
+forall addr. Show addr =&gt; Int -&gt; LinkTable addr -&gt; ShowS
+forall addr. Show addr =&gt; [LinkTable addr] -&gt; ShowS
+forall addr. Show addr =&gt; LinkTable addr -&gt; String
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: forall addr. Show addr =&gt; Int -&gt; LinkTable addr -&gt; ShowS
+showsPrec :: Int -&gt; LinkTable addr -&gt; ShowS
+$cshow :: forall addr. Show addr =&gt; LinkTable addr -&gt; String
+show :: LinkTable addr -&gt; String
+$cshowList :: forall addr. Show addr =&gt; [LinkTable addr] -&gt; ShowS
+showList :: [LinkTable addr] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051233"><span id="local-6989586621679051240"><span class="annot"><span class="annottext">LinkTable addr -&gt; LinkTable addr -&gt; Bool
+(LinkTable addr -&gt; LinkTable addr -&gt; Bool)
+-&gt; (LinkTable addr -&gt; LinkTable addr -&gt; Bool)
+-&gt; Eq (LinkTable addr)
+forall addr. Eq addr =&gt; LinkTable addr -&gt; LinkTable addr -&gt; Bool
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: forall addr. Eq addr =&gt; LinkTable addr -&gt; LinkTable addr -&gt; Bool
+== :: LinkTable addr -&gt; LinkTable addr -&gt; Bool
+$c/= :: forall addr. Eq addr =&gt; LinkTable addr -&gt; LinkTable addr -&gt; Bool
+/= :: LinkTable addr -&gt; LinkTable addr -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-56"></span><span>
+</span><span id="line-57"></span><span class="annot"><span class="hs-comment">-- | A transition rejected by the link-lifetime state machine.</span></span><span>
+</span><span id="line-58"></span><span class="hs-keyword">data</span><span> </span><span id="LinkError"><span class="annot"><a href="Graft.Link.html#LinkError"><span class="hs-identifier hs-var">LinkError</span></a></span></span><span>
+</span><span id="line-59"></span><span>  </span><span class="hs-glyph">=</span><span> </span><span id="LinkIdCollision"><span class="annot"><a href="Graft.Link.html#LinkIdCollision"><span class="hs-identifier hs-var">LinkIdCollision</span></a></span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span>
+</span><span id="line-60"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="ChildAlreadyAttached"><span class="annot"><a href="Graft.Link.html#ChildAlreadyAttached"><span class="hs-identifier hs-var">ChildAlreadyAttached</span></a></span></span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span>
+</span><span id="line-61"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="UnknownLink"><span class="annot"><a href="Graft.Link.html#UnknownLink"><span class="hs-identifier hs-var">UnknownLink</span></a></span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span>
+</span><span id="line-62"></span><span>  </span><span class="hs-glyph">|</span><span> </span><span id="FinalizedLink"><span class="annot"><a href="Graft.Link.html#FinalizedLink"><span class="hs-identifier hs-var">FinalizedLink</span></a></span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span>
+</span><span id="line-63"></span><span>  </span><span class="hs-keyword">deriving</span><span> </span><span class="hs-special">(</span><span id="local-6989586621679051253"><span id="local-6989586621679051263"><span id="local-6989586621679051267"><span class="annot"><span class="annottext">Int -&gt; LinkError -&gt; ShowS
+[LinkError] -&gt; ShowS
+LinkError -&gt; String
+(Int -&gt; LinkError -&gt; ShowS)
+-&gt; (LinkError -&gt; String)
+-&gt; ([LinkError] -&gt; ShowS)
+-&gt; Show LinkError
+forall a.
+(Int -&gt; a -&gt; ShowS) -&gt; (a -&gt; String) -&gt; ([a] -&gt; ShowS) -&gt; Show a
+$cshowsPrec :: Int -&gt; LinkError -&gt; ShowS
+showsPrec :: Int -&gt; LinkError -&gt; ShowS
+$cshow :: LinkError -&gt; String
+show :: LinkError -&gt; String
+$cshowList :: [LinkError] -&gt; ShowS
+showList :: [LinkError] -&gt; ShowS
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var hs-var hs-var">Show</span></span></span></span></span><span class="hs-special">,</span><span> </span><span id="local-6989586621679051270"><span id="local-6989586621679051278"><span class="annot"><span class="annottext">LinkError -&gt; LinkError -&gt; Bool
+(LinkError -&gt; LinkError -&gt; Bool)
+-&gt; (LinkError -&gt; LinkError -&gt; Bool) -&gt; Eq LinkError
+forall a. (a -&gt; a -&gt; Bool) -&gt; (a -&gt; a -&gt; Bool) -&gt; Eq a
+$c== :: LinkError -&gt; LinkError -&gt; Bool
+== :: LinkError -&gt; LinkError -&gt; Bool
+$c/= :: LinkError -&gt; LinkError -&gt; Bool
+/= :: LinkError -&gt; LinkError -&gt; Bool
+</span><span class="hs-identifier hs-var hs-var hs-var hs-var hs-var hs-var">Eq</span></span></span></span><span class="hs-special">)</span><span>
+</span><span id="line-64"></span><span>
+</span><span id="line-65"></span><span class="annot"><span class="hs-comment">-- | A link table with no known incarnations.</span></span><span>
+</span><span id="line-66"></span><span id="local-6989586621679051058"><span class="annot"><a href="Graft.Link.html#emptyLinks"><span class="hs-identifier hs-type">emptyLinks</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051058"><span class="hs-identifier hs-type">addr</span></a></span></span><span>
+</span><span id="line-67"></span><span id="emptyLinks"><span class="annot"><span class="annottext">emptyLinks :: forall addr. LinkTable addr
+</span><a href="Graft.Link.html#emptyLinks"><span class="hs-identifier hs-var hs-var">emptyLinks</span></a></span></span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; LinkTable addr
+forall addr. Map LinkId (Attachment addr) -&gt; LinkTable addr
+</span><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+forall k a. Map k a
+</span><span class="hs-identifier hs-var">Map.empty</span></span><span>
+</span><span id="line-68"></span><span>
+</span><span id="line-69"></span><span class="hs-comment">-- | Admit one child under a fresh link ID. An exact replay before</span><span>
+</span><span id="line-70"></span><span class="hs-comment">-- finalization is harmless; a finalized ID cannot be admitted again.</span><span>
+</span><span id="line-71"></span><span id="local-6989586621679051063"><span class="annot"><a href="Graft.Link.html#attach"><span class="hs-identifier hs-type">attach</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-72"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-73"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-74"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051063"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-75"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkError"><span class="hs-identifier hs-type">LinkError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051063"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-76"></span><span id="attach"><span class="annot"><span class="annottext">attach :: forall addr.
+LinkId
+-&gt; Pid -&gt; LinkTable addr -&gt; Either LinkError (LinkTable addr)
+</span><a href="Graft.Link.html#attach"><span class="hs-identifier hs-var hs-var">attach</span></a></span></span><span> </span><span id="local-6989586621679051287"><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051287"><span class="hs-identifier hs-var">link</span></a></span></span><span> </span><span id="local-6989586621679051288"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051288"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span id="local-6989586621679051289"><span class="annot"><span class="annottext">table :: LinkTable addr
+</span><a href="#local-6989586621679051289"><span class="hs-identifier hs-var">table</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span id="local-6989586621679051290"><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051290"><span class="hs-identifier hs-var">links</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-77"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">LinkId -&gt; Map LinkId (Attachment addr) -&gt; Maybe (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051287"><span class="hs-identifier hs-var">link</span></a></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051290"><span class="hs-identifier hs-var">links</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-78"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-type">Finalized</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId -&gt; LinkError
+</span><a href="Graft.Link.html#FinalizedLink"><span class="hs-identifier hs-var">FinalizedLink</span></a></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051287"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-79"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679051292"><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051292"><span class="hs-identifier hs-var">existing</span></a></span></span><span>
+</span><span id="line-80"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Attachment addr -&gt; Pid
+forall addr. Attachment addr -&gt; Pid
+</span><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var">attachmentChild</span></a></span><span> </span><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051292"><span class="hs-identifier hs-var">existing</span></a></span><span> </span><span class="annot"><span class="annottext">Pid -&gt; Pid -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051288"><span class="hs-identifier hs-var">childPid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkTable addr -&gt; Either LinkError (LinkTable addr)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">LinkTable addr
+</span><a href="#local-6989586621679051289"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-81"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId -&gt; LinkError
+</span><a href="Graft.Link.html#LinkIdCollision"><span class="hs-identifier hs-var">LinkIdCollision</span></a></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051287"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-82"></span><span>    </span><span class="annot"><span class="annottext">Maybe (Attachment addr)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span>
+</span><span id="line-83"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">(Attachment addr -&gt; Bool) -&gt; [Attachment addr] -&gt; Bool
+forall (t :: * -&gt; *) a. Foldable t =&gt; (a -&gt; Bool) -&gt; t a -&gt; Bool
+</span><span class="hs-identifier hs-var">any</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; Attachment addr -&gt; Bool
+forall addr. Pid -&gt; Attachment addr -&gt; Bool
+</span><a href="Graft.Link.html#isAttachedChild"><span class="hs-identifier hs-var">isAttachedChild</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051288"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; [Attachment addr]
+forall k a. Map k a -&gt; [a]
+</span><span class="hs-identifier hs-var">Map.elems</span></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051290"><span class="hs-identifier hs-var">links</span></a></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-84"></span><span>          </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; LinkError
+</span><a href="Graft.Link.html#ChildAlreadyAttached"><span class="hs-identifier hs-var">ChildAlreadyAttached</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051288"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-85"></span><span>      </span><span class="hs-glyph">|</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">otherwise</span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-86"></span><span>          </span><span class="annot"><span class="annottext">LinkTable addr -&gt; Either LinkError (LinkTable addr)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; LinkTable addr
+forall addr. Map LinkId (Attachment addr) -&gt; LinkTable addr
+</span><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId
+-&gt; Attachment addr
+-&gt; Map LinkId (Attachment addr)
+-&gt; Map LinkId (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051287"><span class="hs-identifier hs-var">link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; Attachment addr
+forall addr. Pid -&gt; Attachment addr
+</span><a href="Graft.Link.html#Admitted"><span class="hs-identifier hs-var">Admitted</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051288"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051290"><span class="hs-identifier hs-var">links</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span>
+</span><span id="line-87"></span><span>
+</span><span id="line-88"></span><span class="hs-comment">-- | Replace the current committed publication for one admitted link.</span><span>
+</span><span id="line-89"></span><span class="hs-comment">-- The first publication moves the link out of the admitted-only state.</span><span>
+</span><span id="line-90"></span><span class="hs-comment">-- Ordering successive replacements belongs to the protocol above this</span><span>
+</span><span id="line-91"></span><span class="hs-comment">-- state machine.</span><span>
+</span><span id="line-92"></span><span id="local-6989586621679051078"><span class="annot"><a href="Graft.Link.html#publish"><span class="hs-identifier hs-type">publish</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-93"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-94"></span><span>  </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051078"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-95"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051078"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-96"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkError"><span class="hs-identifier hs-type">LinkError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051078"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-97"></span><span id="publish"><span class="annot"><span class="annottext">publish :: forall addr.
+LinkId
+-&gt; Directory addr
+-&gt; LinkTable addr
+-&gt; Either LinkError (LinkTable addr)
+</span><a href="Graft.Link.html#publish"><span class="hs-identifier hs-var hs-var">publish</span></a></span></span><span> </span><span id="local-6989586621679051300"><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051300"><span class="hs-identifier hs-var">link</span></a></span></span><span> </span><span id="local-6989586621679051301"><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679051301"><span class="hs-identifier hs-var">nextPublication</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span id="local-6989586621679051302"><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051302"><span class="hs-identifier hs-var">links</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-98"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">LinkId -&gt; Map LinkId (Attachment addr) -&gt; Maybe (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051300"><span class="hs-identifier hs-var">link</span></a></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051302"><span class="hs-identifier hs-var">links</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-99"></span><span>    </span><span class="annot"><span class="annottext">Maybe (Attachment addr)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId -&gt; LinkError
+</span><a href="Graft.Link.html#UnknownLink"><span class="hs-identifier hs-var">UnknownLink</span></a></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051300"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-100"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-type">Finalized</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId -&gt; LinkError
+</span><a href="Graft.Link.html#FinalizedLink"><span class="hs-identifier hs-var">FinalizedLink</span></a></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051300"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-101"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679051303"><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051303"><span class="hs-identifier hs-var">attachment</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-102"></span><span>      </span><span class="annot"><span class="annottext">LinkTable addr -&gt; Either LinkError (LinkTable addr)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span>
+</span><span id="line-103"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; LinkTable addr
+forall addr. Map LinkId (Attachment addr) -&gt; LinkTable addr
+</span><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span><span>
+</span><span id="line-104"></span><span>            </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">LinkId
+-&gt; Attachment addr
+-&gt; Map LinkId (Attachment addr)
+-&gt; Map LinkId (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span>
+</span><span id="line-105"></span><span>                </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051300"><span class="hs-identifier hs-var">link</span></a></span><span>
+</span><span id="line-106"></span><span>                </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; Directory addr -&gt; Attachment addr
+forall addr. Pid -&gt; Directory addr -&gt; Attachment addr
+</span><a href="Graft.Link.html#Live"><span class="hs-identifier hs-var">Live</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attachment addr -&gt; Pid
+forall addr. Attachment addr -&gt; Pid
+</span><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var">attachmentChild</span></a></span><span> </span><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051303"><span class="hs-identifier hs-var">attachment</span></a></span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679051301"><span class="hs-identifier hs-var">nextPublication</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-107"></span><span>                </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051302"><span class="hs-identifier hs-var">links</span></a></span><span>
+</span><span id="line-108"></span><span>            </span><span class="hs-special">)</span><span>
+</span><span id="line-109"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-110"></span><span>
+</span><span id="line-111"></span><span class="hs-comment">-- | Finalize a link and withdraw its complete publication. Replaying</span><span>
+</span><span id="line-112"></span><span class="hs-comment">-- finalization is harmless; the terminal ID cannot publish again.</span><span>
+</span><span id="line-113"></span><span id="local-6989586621679051080"><span class="annot"><a href="Graft.Link.html#finalize"><span class="hs-identifier hs-type">finalize</span></a></span><span> </span><span class="hs-glyph">::</span><span>
+</span><span id="line-114"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkId"><span class="hs-identifier hs-type">LinkId</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-115"></span><span>  </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051080"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-116"></span><span>  </span><span class="annot"><span class="hs-identifier hs-type">Either</span></span><span> </span><span class="annot"><a href="Graft.Link.html#LinkError"><span class="hs-identifier hs-type">LinkError</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051080"><span class="hs-identifier hs-type">addr</span></a></span><span class="hs-special">)</span></span><span>
+</span><span id="line-117"></span><span id="finalize"><span class="annot"><span class="annottext">finalize :: forall addr.
+LinkId -&gt; LinkTable addr -&gt; Either LinkError (LinkTable addr)
+</span><a href="Graft.Link.html#finalize"><span class="hs-identifier hs-var hs-var">finalize</span></a></span></span><span> </span><span id="local-6989586621679051306"><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051306"><span class="hs-identifier hs-var">link</span></a></span></span><span> </span><span id="local-6989586621679051307"><span class="annot"><span class="annottext">table :: LinkTable addr
+</span><a href="#local-6989586621679051307"><span class="hs-identifier hs-var">table</span></a></span></span><span class="hs-glyph">@</span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span id="local-6989586621679051308"><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051308"><span class="hs-identifier hs-var">links</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-118"></span><span>  </span><span class="hs-keyword">case</span><span> </span><span class="annot"><span class="annottext">LinkId -&gt; Map LinkId (Attachment addr) -&gt; Maybe (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; Map k a -&gt; Maybe a
+</span><span class="hs-identifier hs-var">Map.lookup</span></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051306"><span class="hs-identifier hs-var">link</span></a></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051308"><span class="hs-identifier hs-var">links</span></a></span><span> </span><span class="hs-keyword">of</span><span>
+</span><span id="line-119"></span><span>    </span><span class="annot"><span class="annottext">Maybe (Attachment addr)
+</span><span class="hs-identifier hs-var">Nothing</span></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkError -&gt; Either LinkError (LinkTable addr)
+forall a b. a -&gt; Either a b
+</span><span class="hs-identifier hs-var">Left</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId -&gt; LinkError
+</span><a href="Graft.Link.html#UnknownLink"><span class="hs-identifier hs-var">UnknownLink</span></a></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051306"><span class="hs-identifier hs-var">link</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-120"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-type">Finalized</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="annottext">LinkTable addr -&gt; Either LinkError (LinkTable addr)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span> </span><span class="annot"><span class="annottext">LinkTable addr
+</span><a href="#local-6989586621679051307"><span class="hs-identifier hs-var">table</span></a></span><span>
+</span><span id="line-121"></span><span>    </span><span class="annot"><span class="hs-identifier hs-type">Just</span></span><span> </span><span id="local-6989586621679051309"><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051309"><span class="hs-identifier hs-var">attachment</span></a></span></span><span> </span><span class="hs-glyph">-&gt;</span><span>
+</span><span id="line-122"></span><span>      </span><span class="annot"><span class="annottext">LinkTable addr -&gt; Either LinkError (LinkTable addr)
+forall a b. b -&gt; Either a b
+</span><span class="hs-identifier hs-var">Right</span></span><span>
+</span><span id="line-123"></span><span>        </span><span class="hs-special">(</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; LinkTable addr
+forall addr. Map LinkId (Attachment addr) -&gt; LinkTable addr
+</span><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-var">LinkTable</span></a></span><span>
+</span><span id="line-124"></span><span>            </span><span class="hs-comment">-- Map.insert replaces the value because this key already exists.</span><span>
+</span><span id="line-125"></span><span>            </span><span class="hs-special">(</span><span class="annot"><span class="annottext">LinkId
+-&gt; Attachment addr
+-&gt; Map LinkId (Attachment addr)
+-&gt; Map LinkId (Attachment addr)
+forall k a. Ord k =&gt; k -&gt; a -&gt; Map k a -&gt; Map k a
+</span><span class="hs-identifier hs-var">Map.insert</span></span><span> </span><span class="annot"><span class="annottext">LinkId
+</span><a href="#local-6989586621679051306"><span class="hs-identifier hs-var">link</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; Attachment addr
+forall addr. Pid -&gt; Attachment addr
+</span><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-var">Finalized</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Attachment addr -&gt; Pid
+forall addr. Attachment addr -&gt; Pid
+</span><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var">attachmentChild</span></a></span><span> </span><span class="annot"><span class="annottext">Attachment addr
+</span><a href="#local-6989586621679051309"><span class="hs-identifier hs-var">attachment</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051308"><span class="hs-identifier hs-var">links</span></a></span><span class="hs-special">)</span><span>
+</span><span id="line-126"></span><span>        </span><span class="hs-special">)</span><span>
+</span><span id="line-127"></span><span>
+</span><span id="line-128"></span><span class="hs-comment">-- | Derive the holder's directory from its local contribution and</span><span>
+</span><span id="line-129"></span><span class="hs-comment">-- every published child contribution. Admitted and finalized links</span><span>
+</span><span id="line-130"></span><span class="hs-comment">-- contribute nothing. All entries learned through a child acquire</span><span>
+</span><span id="line-131"></span><span class="hs-comment">-- that child as their next hop.</span><span>
+</span><span id="line-132"></span><span id="local-6989586621679051083"><span class="annot"><a href="Graft.Link.html#materialize"><span class="hs-identifier hs-type">materialize</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-type">NextHop</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051083"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Directory"><span class="hs-identifier hs-type">Directory</span></a></span><span> </span><span class="annot"><a href="Graft.Directory.html#NextHop"><span class="hs-identifier hs-type">NextHop</span></a></span></span><span>
+</span><span id="line-133"></span><span id="materialize"><span class="annot"><span class="annottext">materialize :: forall addr.
+Directory NextHop -&gt; LinkTable addr -&gt; Directory NextHop
+</span><a href="Graft.Link.html#materialize"><span class="hs-identifier hs-var hs-var">materialize</span></a></span></span><span> </span><span id="local-6989586621679051313"><span class="annot"><span class="annottext">Directory NextHop
+</span><a href="#local-6989586621679051313"><span class="hs-identifier hs-var">local</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#LinkTable"><span class="hs-identifier hs-type">LinkTable</span></a></span><span> </span><span id="local-6989586621679051314"><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051314"><span class="hs-identifier hs-var">links</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span>
+</span><span id="line-134"></span><span>  </span><span class="annot"><span class="annottext">(Directory NextHop -&gt; Directory NextHop -&gt; Directory NextHop)
+-&gt; Directory NextHop -&gt; [Directory NextHop] -&gt; Directory NextHop
+forall b a. (b -&gt; a -&gt; b) -&gt; b -&gt; [a] -&gt; b
+forall (t :: * -&gt; *) b a.
+Foldable t =&gt;
+(b -&gt; a -&gt; b) -&gt; b -&gt; t a -&gt; b
+</span><span class="hs-identifier hs-var">foldl'</span></span><span>
+</span><span id="line-135"></span><span>    </span><span class="annot"><span class="annottext">Directory NextHop -&gt; Directory NextHop -&gt; Directory NextHop
+forall addr.
+Eq addr =&gt;
+Directory addr -&gt; Directory addr -&gt; Directory addr
+</span><a href="Graft.Directory.html#merge"><span class="hs-identifier hs-var">merge</span></a></span><span>
+</span><span id="line-136"></span><span>    </span><span class="annot"><span class="annottext">Directory NextHop
+</span><a href="#local-6989586621679051313"><span class="hs-identifier hs-var">local</span></a></span><span>
+</span><span id="line-137"></span><span>    </span><span class="hs-special">[</span><span> </span><span class="annot"><span class="annottext">(addr -&gt; NextHop) -&gt; Directory addr -&gt; Directory NextHop
+forall a b. (a -&gt; b) -&gt; Directory a -&gt; Directory b
+</span><a href="Graft.Directory.html#mapLocators"><span class="hs-identifier hs-var">mapLocators</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">NextHop -&gt; addr -&gt; NextHop
+forall a b. a -&gt; b -&gt; a
+</span><span class="hs-identifier hs-var">const</span></span><span> </span><span class="hs-special">(</span><span class="annot"><span class="annottext">Pid -&gt; NextHop
+</span><a href="Graft.Directory.html#Child"><span class="hs-identifier hs-var">Child</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051317"><span class="hs-identifier hs-var">childPid</span></a></span><span class="hs-special">)</span><span class="hs-special">)</span><span> </span><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679051318"><span class="hs-identifier hs-var">childPublication</span></a></span><span>
+</span><span id="line-138"></span><span>    </span><span class="hs-glyph">|</span><span> </span><span class="annot"><a href="Graft.Link.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051317"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051317"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span id="local-6989586621679051318"><span class="annot"><span class="annottext">Directory addr
+</span><a href="#local-6989586621679051318"><span class="hs-identifier hs-var">childPublication</span></a></span></span><span> </span><span class="hs-glyph">&lt;-</span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr) -&gt; [Attachment addr]
+forall k a. Map k a -&gt; [a]
+</span><span class="hs-identifier hs-var">Map.elems</span></span><span> </span><span class="annot"><span class="annottext">Map LinkId (Attachment addr)
+</span><a href="#local-6989586621679051314"><span class="hs-identifier hs-var">links</span></a></span><span>
+</span><span id="line-139"></span><span>    </span><span class="hs-special">]</span><span>
+</span><span id="line-140"></span><span>
+</span><span id="line-141"></span><span id="local-6989586621679051069"><span class="annot"><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-type">attachmentChild</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Link.html#Attachment"><span class="hs-identifier hs-type">Attachment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051069"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span></span><span>
+</span><span id="line-142"></span><span id="attachmentChild"><span class="annot"><span class="annottext">attachmentChild :: forall addr. Attachment addr -&gt; Pid
+</span><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var hs-var">attachmentChild</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Admitted"><span class="hs-identifier hs-type">Admitted</span></a></span><span> </span><span id="local-6989586621679051319"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051319"><span class="hs-identifier hs-var">childPid</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051319"><span class="hs-identifier hs-var">childPid</span></a></span><span>
+</span><span id="line-143"></span><span class="annot"><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var">attachmentChild</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051320"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051320"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span class="annot"><span class="annottext">Directory addr
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051320"><span class="hs-identifier hs-var">childPid</span></a></span><span>
+</span><span id="line-144"></span><span class="annot"><a href="Graft.Link.html#attachmentChild"><span class="hs-identifier hs-var">attachmentChild</span></a></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-type">Finalized</span></a></span><span> </span><span id="local-6989586621679051321"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051321"><span class="hs-identifier hs-var">childPid</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051321"><span class="hs-identifier hs-var">childPid</span></a></span><span>
+</span><span id="line-145"></span><span>
+</span><span id="line-146"></span><span id="local-6989586621679051072"><span class="annot"><a href="Graft.Link.html#isAttachedChild"><span class="hs-identifier hs-type">isAttachedChild</span></a></span><span> </span><span class="hs-glyph">::</span><span> </span><span class="annot"><a href="Graft.Directory.html#Pid"><span class="hs-identifier hs-type">Pid</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><a href="Graft.Link.html#Attachment"><span class="hs-identifier hs-type">Attachment</span></a></span><span> </span><span class="annot"><a href="#local-6989586621679051072"><span class="hs-identifier hs-type">addr</span></a></span><span> </span><span class="hs-glyph">-&gt;</span><span> </span><span class="annot"><span class="hs-identifier hs-type">Bool</span></span></span><span>
+</span><span id="line-147"></span><span id="isAttachedChild"><span class="annot"><span class="annottext">isAttachedChild :: forall addr. Pid -&gt; Attachment addr -&gt; Bool
+</span><a href="Graft.Link.html#isAttachedChild"><span class="hs-identifier hs-var hs-var">isAttachedChild</span></a></span></span><span> </span><span id="local-6989586621679051324"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051324"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Admitted"><span class="hs-identifier hs-type">Admitted</span></a></span><span> </span><span id="local-6989586621679051325"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051325"><span class="hs-identifier hs-var">attachedPid</span></a></span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051324"><span class="hs-identifier hs-var">childPid</span></a></span><span> </span><span class="annot"><span class="annottext">Pid -&gt; Pid -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051325"><span class="hs-identifier hs-var">attachedPid</span></a></span><span>
+</span><span id="line-148"></span><span class="annot"><a href="Graft.Link.html#isAttachedChild"><span class="hs-identifier hs-var">isAttachedChild</span></a></span><span> </span><span id="local-6989586621679051326"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051326"><span class="hs-identifier hs-var">childPid</span></a></span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Live"><span class="hs-identifier hs-type">Live</span></a></span><span> </span><span id="local-6989586621679051327"><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051327"><span class="hs-identifier hs-var">attachedPid</span></a></span></span><span> </span><span class="annot"><span class="annottext">Directory addr
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051326"><span class="hs-identifier hs-var">childPid</span></a></span><span> </span><span class="annot"><span class="annottext">Pid -&gt; Pid -&gt; Bool
+forall a. Eq a =&gt; a -&gt; a -&gt; Bool
+</span><span class="hs-operator hs-var">==</span></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><a href="#local-6989586621679051327"><span class="hs-identifier hs-var">attachedPid</span></a></span><span>
+</span><span id="line-149"></span><span class="annot"><a href="Graft.Link.html#isAttachedChild"><span class="hs-identifier hs-var">isAttachedChild</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><span class="hs-identifier">_</span></span><span> </span><span class="hs-special">(</span><span class="annot"><a href="Graft.Link.html#Finalized"><span class="hs-identifier hs-type">Finalized</span></a></span><span> </span><span class="annot"><span class="annottext">Pid
+</span><span class="hs-identifier">_</span></span><span class="hs-special">)</span><span> </span><span class="hs-glyph">=</span><span> </span><span class="annot"><span class="annottext">Bool
+</span><span class="hs-identifier hs-var">False</span></span><span>
+</span><span id="line-150"></span></pre></body></html>
