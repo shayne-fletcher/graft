@@ -131,7 +131,9 @@ finalize link table@(LinkTable links) =
 -- that child as their next hop.
 materialize :: Directory NextHop -> LinkTable addr -> Directory NextHop
 materialize local (LinkTable links) =
-  foldl' merge local
+  foldl'
+    merge
+    local
     [ mapLocators (const (Child childPid)) childPublication
     | Live childPid childPublication <- Map.elems links
     ]
